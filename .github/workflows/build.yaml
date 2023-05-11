@@ -1,0 +1,33 @@
+name: Java Build
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: ["main"]
+
+  pull_request:
+    branches: ["main", "release-*"]
+
+concurrency:
+  group: java-build-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04 ]
+        java: [ "11", "17" ]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+      - name: Build JAR Artifacts
+        run: mvn --batch-mode --errors --update-snapshots clean package -Drevision=$(git describe --tags --always)
