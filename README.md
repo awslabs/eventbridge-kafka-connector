@@ -300,6 +300,31 @@ Below is an example of an event received by an EventBridge target using the mini
 }
 ```
 
+#### Example EventBridge Rule Pattern
+
+The following Rule pattern would match the above event, i.e., any event where:
+
+- `source` is **exactly** `kafka-connect.my-json-values-connector` and 
+- `detail.key` **starts with** `order` and
+- the field `orderItems` **exists** in the `details.value` object
+
+```json5
+{
+  "source": ["kafka-connect.my-json-values-connector"],
+  "detail": {
+    "key": [{"prefix": "order"}],
+    "value": {
+      "orderItems": [{"exists": true}]
+    }
+  }
+}
+```
+
+> **Note**  
+> Consult the EventBridge event patterns
+> [documentation](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html) for a complete
+> explanation of available patterns.
+
 ## Contributing and Security
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
