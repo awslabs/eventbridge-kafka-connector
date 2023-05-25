@@ -139,7 +139,7 @@ public class EventBridgeWriter {
       var request = PutEventsRequest.builder().entries(putEventsEntries).build();
       log.trace("EventBridgeWriter sending request to eventbridge: {}", request);
       var response = ebClient.putEvents(request).get(SDK_TIMEOUT, MILLISECONDS);
-      log.trace("putEvents response: {}", response.entries());
+      log.trace("EventBridgeWriter putEvents response: {}", response.entries());
 
       // Check for errors and return index of failed items
       if (response.failedEntryCount() > 0) {

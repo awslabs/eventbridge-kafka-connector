@@ -63,6 +63,6 @@ public class EventBridgeSinkConnector extends SinkConnector {
 
   @Override
   public void stop() {
-    log.trace("Stopping sink connector");
+    log.info("Stopping sink connector");
   }
 }
