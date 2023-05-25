@@ -23,10 +23,10 @@ maintainers.
 ### Java Archive (JAR)
 
 Two `kafka-eventbridge-sink` JAR files, are created on each
-[release](https://github.com/awslabs/eventbridge-kafka-connector/releases). The file `*-jar-with-dependencies` contains
-all required dependencies of the connector, excluding Kafka Connect dependencies and (de)serializers, such as
-`connect-api` and `connect-json`. To support additional (de)serializers, such as Avro and Protobuf using the [AWS Glue
-Schema
+[release](https://github.com/awslabs/eventbridge-kafka-connector/releases). The JAR file `*-with-dependencies.jar`
+contains all required dependencies of the connector, **excluding** Kafka Connect dependencies and (de)serializers, such
+as `connect-api` and `connect-json`. To support additional (de)serializers, such as Avro and Protobuf using the [AWS
+Glue Schema
 Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-apache-kafka-connect),
 install these dependencies in your Kafka Connect environment before deploying this connector.
 
@@ -36,8 +36,12 @@ The following steps describe how to clone the repo and perform a clean packaging
 Java Development Kit (JDK 11 or later).
 
 ```console
-git clone https://github.com/awslabs/eventbridge-kafka-connector.git && cd eventbridge-kafka-connector
-mvn clean package -Drevision=$(git describe --tags)
+# clone repo
+git clone https://github.com/awslabs/eventbridge-kafka-connector.git
+cd eventbridge-kafka-connector
+
+# create jar files
+mvn clean package -Drevision=$(git describe --tags --always)
 ```
 
 ### From Source (Docker)
@@ -46,9 +50,13 @@ The following steps describe how to clone the repo and perform a clean packaging
 [Docker](https://docker.com/).
 
 ```console
-git clone https://github.com/awslabs/eventbridge-kafka-connector.git && cd eventbridge-kafka-connector
+# clone repo
+git clone https://github.com/awslabs/eventbridge-kafka-connector.git
+cd eventbridge-kafka-connector
+
+# create jar files
 docker run --rm -v maven-repo:/root/.m2 -v $(pwd):/src -w /src -it maven:3-eclipse-temurin-11 \
-mvn clean package -Drevision=$(git describe --tags)
+mvn clean package -Drevision=$(git describe --tags --always)
 ```
 
 ## Configuration
@@ -95,7 +103,7 @@ EventBridge event bus `"kafkabus"` in region `"us-east-1"`.
 }
 ```
 
-> **Note**
+> **Note**  
 > Currently, when using `JsonConverter` for keys or values, the connector uses a fixed configuration
 > `schemas.enable=false`, i.e., JSON schemas are not included in the outgoing EventBridge event.
 
@@ -235,7 +243,7 @@ The connector only requires `events:PutEvents` permission as shown in the IAM po
 }
 ```
 
-> **Note** 
+> **Note**  
 > If you use the Glue Schema Registry, the IAM role needs additional permissions to retrieve schemas e.g.,
 > using the managed policy `AWSGlueSchemaRegistryReadonlyAccess`. Please refer to the Glue Schema Registry
 > [documentation](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html).
