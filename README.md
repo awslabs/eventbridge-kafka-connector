@@ -324,6 +324,113 @@ The following Rule pattern would match the above event, i.e., any event where:
 > Consult the EventBridge event patterns
 > [documentation](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html) for a complete
 > explanation of available patterns.
+## Troubleshooting
+
+Common issues are around schema handling, authentication and authorization (IAM), and debugging the event flow.
+
+### Schemas
+
+If you see the following errors, check your connector configuration if it uses the correct key and value schema
+settings.
+
+**Error:**
+
+The following error is caused when the `JsonConverter` is used and configured to use a schema within the Kafka record.
+If the Kafka record was not produced with a JSON schema, i.e., only the JSON value, deserialization will fail with:
+
+```console
+org.apache.kafka.connect.errors.DataException: JsonConverter with schemas.enable requires "schema" and "payload" 
+fields and may not contain additional fields. If you are trying to deserialize plain JSON data, 
+set schemas.enable=false in your converter configuration.
+```
+
+**Resolution:**
+
+```console
+"value.converter": "org.apache.kafka.connect.json.JsonConverter",
+"value.converter.schemas.enable": "false",
+```
+
+**Error:**
+
+The following error is caused when an `AvroConverter` is used but the respective key/value is not Avro-encoded:
+
+```console
+org.apache.kafka.common.errors.SerializationException: Error deserializing Avro message for id -1
+org.apache.kafka.common.errors.SerializationException: Unknown magic byte!
+```
+
+**Resolution:**
+
+Change the key and/or value converters from Avro to the actual schema/payload type stored in the topic.
+
+### IAM
+
+When invalid IAM credentials are used, such as due to expired tokens or insufficient permissions, the connector will
+throw an exception after an `PutEvents` API call attempt to EventBridge or during key/value deserialization when an
+external schema registry with authentication is used. An example error message due to insufficient `PutEvents`
+permissions looks like:
+
+```console
+org.apache.kafka.connect.errors.ConnectException: software.amazon.event.kafkaconnector.exceptions.EventBridgeWriterException: 
+java.util.concurrent.ExecutionException: software.amazon.awssdk.services.eventbridge.model.EventBridgeException: 
+User: arn:aws:sts::1234567890:assumed-role/some/role is not authorized to perform: events:PutEvents on resource: arn:aws:events:us-east-1:1234567890:event-bus/kafkabus because no identity-based policy allows the events:PutEvents action 
+(Service: EventBridge, Status Code: 400, Request ID: e5ed0fb7-535d-4417-b38b-110f8495d0cb)
+```
+
+### Throttling (API Rate Limiting)
+
+By default, the underlying AWS SDK client used will automatically handle throttle errors (exceptions) when the
+`PutEvents` ingestion [quota](https://docs.aws.amazon.com/general/latest/gr/ev.html) for the account/region is exceeded.
+However, depending on your quota and ingestion rate, if the client keeps hitting the rate limit it might throw an
+exception to the connector. When setting `aws.eventbridge.retries.max` greater than `0`, the connector will attempt to
+retry such a failed `PutEvents` attempt up to `aws.eventbridge.retries.max`. If `aws.eventbridge.retries.max` is 0 or
+the retry budget is exhausted, a terminal `ConnectException` is thrown and the task will be stopped.
+
+### Payloads exceeding `PutEvents` Limit
+
+EventBridge has a [limit](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-putevent-size.html) of 256KB on
+the request size used in `PutEvents`. When a Kafka record exceeds this threshold, the connector will log a warning and
+ignore (skip) over the record. Optionally, a dead-letter topic can be
+[configured](#json-encoding-with-dead-letter-queue) where such records are sent to.
+
+```console
+[2023-05-26 09:01:21,149] WARN [EventBridgeSink-Json|task-0] Marking record as failed: code=413 message=EventBridge batch size limit exceeded topic=json-test partition=0 offset=0 (software.amazon.event.kafkaconnector.EventBridgeWriter:244)
+[2023-05-26 09:01:21,149] WARN [EventBridgeSink-Json|task-0] Dead-letter queue not configured: skipping failed record (software.amazon.event.kafkaconnector.EventBridgeSinkTask:147)
+software.amazon.event.kafkaconnector.exceptions.EventBridgePartialFailureResponse: statusCode=413 errorMessage=EventBridge batch size limit exceeded topic=json-test partition=0 offset=0
+```
+
+### Debugging Event Flow (TRACE-level logging)
+
+The connector will periodically (asynchronously) on a per-task basis report the count of successful `PutEvents` API
+calls e.g.:
+
+```console
+[2023-05-25 11:53:04,598] INFO [EventBridgeSink-Json|task-0] Total records sent=15 (software.amazon.event.kafkaconnector.util.StatusReporter:36)
+```
+
+> **Note**  
+> Depending on your Kafka Connect environment, you can enable `[EventBridgeSink-Json|task-0]` logging style using this environment variable in Kafka Connect `CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"`
+
+By enabling `TRACE`-level logging, the connector will emit additional log messages, such as the underlying AWS SDK
+client configuration, records received from Kafka Connect, `PutEvents` stats, such as start, end time and duration, etc.
+
+```console
+[2023-05-25 12:01:56,882] TRACE [EventBridgeSink-Json|task-0] EventBridgeSinkTask put called with 1 records: [SinkRecord{kafkaOffset=0, timestampType=CreateTime} ConnectRecord{topic='json-test', kafkaPartition=0, key=my-key, keySchema=Schema{STRING}, value={sentTime=Thu May 25 14:01:56 CEST 2023}, valueSchema=null, timestamp=1685016116860, headers=ConnectHeaders(headers=)}] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:57)
+[2023-05-25 12:01:56,889] TRACE [EventBridgeSink-Json|task-0] EventBridgeSinkTask putItems call started: start=2023-05-25T12:01:56.889640Z attempts=1 maxRetries=0 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:77)
+[2023-05-25 12:01:56,909] TRACE [EventBridgeSink-Json|task-0] EventBridgeWriter sending request to eventbridge: PutEventsRequest(Entries=[PutEventsRequestEntry(Source=kafka-connect.json-test-connector, Resources=[], DetailType=kafka-connect-json-test, Detail={"topic":"json-test","partition":0,"offset":0,"timestamp":1685016116860,"timestampType":"CreateTime","headers":[],"key":"my-key","value":{"sentTime":"Thu May 25 14:01:56 CEST 2023"}}, EventBusName=arn:aws:events:us-east-1:1234567890:event-bus/kafkabus)]) (software.amazon.event.kafkaconnector.EventBridgeWriter:140)
+[2023-05-25 12:01:57,242] TRACE [EventBridgeSink-Json|task-0] EventBridgeWriter putEvents response: [PutEventsResultEntry(EventId=875b7f21-f098-8b55-ea7a-a4d235079bfb)] (software.amazon.event.kafkaconnector.EventBridgeWriter:142)
+[2023-05-25 12:01:57,242] TRACE [EventBridgeSink-Json|task-0] EventBridgeSinkTask putItems call completed: start=2023-05-25T12:01:56.889640Z completion=2023-05-25T12:01:57.242428Z durationMillis=352 attempts=1 maxRetries=0 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:99)
+```
+
+Depending on your Kafka Connect environment, you can enable `TRACE`-level logging via environment variables on Kafka
+Connect using `CONNECT_LOG4J_LOGGERS: "software.amazon.event.kafkaconnector=TRACE"`. Please consult your Kafka Connect
+documentation how to configure and change log levels for a particular connector.
+
+> **Warning**  
+> Enabling `TRACE`-level logging can expose sensitive information due to logging record keys and values. It is strongly
+> recommended to audit changes to the log level to guard against leaking sensitive data, such as personally identifiable
+> information (PII).
 
 ## Contributing and Security
 
