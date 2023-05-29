@@ -13,7 +13,7 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <aws.java.sdk.version>2.20.65</aws.java.sdk.version>
+        <aws.java.sdk.version>2.20.74</aws.java.sdk.version>
         <aws.schema.registry.version>1.1.15</aws.schema.registry.version>
         <com.fasterxml.jackson.version>2.14.3</com.fasterxml.jackson.version>
         <com.google.guava.version>31.1-jre</com.google.guava.version>
