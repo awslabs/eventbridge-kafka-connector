@@ -25,7 +25,7 @@
         <org.apache.logging.log4j.version>2.20.0</org.apache.logging.log4j.version>
         <org.hamcrest.version>2.2</org.hamcrest.version>
         <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
-        <org.mockito.version>4.6.1</org.mockito.version>
+        <org.mockito.version>5.3.1</org.mockito.version>
         <org.slf4j.version>1.7.36</org.slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
