@@ -1,0 +1,294 @@
+{
+    "$schema": "./schema.json",
+    "version": 2,
+    "axioms": {
+      "linguist": "language",
+      "licensee": "license",
+      "packagers": "packager"
+    },
+    "rules": {
+      "binary-exec-lib": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-exists",
+          "options": {
+            "globsAll": [
+              "**/*.jar",
+              "**/*.exe",
+              "**/*.dll",
+              "**/*.class",
+              "**/*.so",
+              "**/*.o",
+              "**/*.a"
+            ],
+            "nocase": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Binary-Exe-Lib"
+      },
+      "binary-archive": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-exists",
+          "options": {
+            "globsAll": [
+              "**/*.zip",
+              "**/*.tar",
+              "**/*.tar.gz",
+              "**/*.7z",
+              "**/*.iso",
+              "**/*.rpm",
+              "**/*.tgz"
+            ],
+            "nocase": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Binary-Archive"
+      },
+      "binary-document": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-exists",
+          "options": {
+            "globsAll": [
+              "**/*.pdf",
+              "**/*.doc",
+              "**/*.docx",
+              "**/*.xls",
+              "**/*.xlsx",
+              "**/*.ppt",
+              "**/*.pptx",
+              "**/*.odt"
+            ],
+            "nocase": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Binary-Document"
+      },
+      "amazon-logo": {
+        "level": "warning",
+        "rule": {
+          "type": "file-hashes-not-exist",
+          "options": {
+            "globsAll": [
+              "**/*"
+            ],
+            "algorithm": "sha256",
+            "hashes": [
+              "54335d349989958daba86c7f92aef8b1661b47abf0d836047e657b06db8d592a",
+              "16520258148b156b66ac0b253e6b7693dcae2fd30d2cd6bda26da87c85e195c6",
+              "2d67b8a540e98d7d9012ac14601046c0e4ba7624c92918ac15342d520277904f",
+              "597d1891d4eab7a58782647e9751646ab9aa0b283edbe58e82651a246cc48f43",
+              "1e4cb5d456f7a0265790fe0c4eb4f8171cd96766cf2f1e2503d2f6b17e84de64",
+              "285c7c58a7276d057e19c61ccce2f4b0b7ea8a024c8c79280a3289bec2fb5925",
+              "e6dd431f8be720464d561223123be58b15859e8a63d4c1e330c076d6ad0524bd",
+              "4ba12aeff2cdcee1d40fdfb728774690a2b7956225b0ca7968cd48e2f65ce270",
+              "d22b4f00354c92204eaa4ea468ba74dd485412f7913801c9b8b50170d833c7d5",
+              "f5d204ed70d70f47043b0a442c3f1a3521982c2cb3c1b3bc4f8717d213120778",
+              "f8b4c3b84ddd5bbe4f79f516f6192ac59ac2320f7700c5a9cbbf8f9c8398c2bf",
+              "78440af0f51afba6e0350567c89fe1a0d2a37d5b0026a206395b5d329ce720af",
+              "432ee33b869b6fb480268bec8ddc0d93d798ae05db7d2cb8aa57f5fe2f4e42ed",
+              "f968fcd52688647b46832cafc7e312682b0501436990ebf819f3e4cab3209b41",
+              "0b38bd68e7a246810e7c407b1ff1ea941c29a4d01c8a099945953edc647f42cd",
+              "05b9e2ab18906cb7e9ef4dacf476bf60dba4d4d7c8c6776c1160b820d69a8f58",
+              "c796cd7c487642e62046b3bdb86ddc345e0a7215f64affba4b3949d5652bcaf0",
+              "48265bd43b0eca96c23c28a4edeef53aed7888343a727c6747e9d0cd8ec7d016",
+              "b9668aa244d1e87ef63d1f1601c87319b13b6b3cd3e2577390c4078258193416",
+              "0143d08dfcb60695c3ff47fe8b76651ab2f9622b8b9e2df0f01231e363c97192",
+              "9a2d7354b76760d4ba40672e5bd3268a81fea8728112b1e2d36fa456e0dd7903",
+              "5cd273f723080e33ae841008375c10c43b280f8b69ccad223e2de2992bf16a4a",
+              "18432923f806b03293504596a80a408aad99eb8e0f3dd66586fec687561e341c",
+              "169ff8f7148ac6de9e7733861050fa41a2aa32a943e65e03d6a163ef77c4e6d5",
+              "3796688dca381f4d988a1c2346d85a6d30164a48e26eb399ba585ccd3b097879",
+              "c42a0aa6b2f35fa67a2d33175595b53bc3ffcf7107c999184199742d935dfce6"
+            ]
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Amazon-Logo"
+      },
+      "third-party-image": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-exists",
+          "options": {
+            "globsAll": [
+              "**/*.jpg",
+              "**/*.jpeg",
+              "**/*.png",
+              "**/*.gif",
+              "**/*.tiff",
+              "**/*.ico",
+              "**/*.svg"
+            ],
+            "nocase": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Third-Party-Image"
+      },
+      "dataset": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-exists",
+          "options": {
+            "globsAll": [
+              "**/*.csv",
+              "**/*.tsv"
+            ],
+            "nocase": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Dataset"
+      },
+      "dockerfile": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-exists",
+          "options": {
+            "globsAll": [
+              "**/*docker*"
+            ],
+            "nocase": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Dockerfile"
+      },
+      "dockerfile-download-statement": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-contents",
+          "options": {
+            "globsAll": [
+              "**/*docker*"
+            ],
+            "contents": [
+              "from",
+              "wget",
+              "curl",
+              "git clone"
+            ],
+            "nocase": true,
+            "flags": "gi",
+            "fail-on-non-existent": false,
+            "display-result-context": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Dockerfile-Download-Statement/"
+      },
+      "internal-url": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-contents",
+          "options": {
+            "globsAll": [
+              "**/*"
+            ],
+            "contents": [
+              "http[s]?:\/\/s3.amazonaws.com",
+              "http[s]?:\/\/w.amazon",
+              "http[s]?:\/\/t.amazon",
+              "http[s]?:\/\/quip-amazon.com",
+              "corp.amazon"
+            ],
+            "nocase": true,
+            "flags": "gi",
+            "fail-on-non-existent": false,
+            "display-result-context": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Internal-URL"
+      },
+      "prohibited-license": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-contents",
+          "options": {
+            "globsAll": [
+              "**/*"
+            ],
+            "contents": [
+              "Affero",
+              "Version 1, March 2002",
+              "AGPL",
+              "GNU Affero General Public License",
+              "Common Public Attribution License",
+              "Honest Public License",
+              "Open Software License",
+              "RealNetworks Public Source License",
+              "version 3 of the License",
+              "either version 3",
+              "Version 3, 29 June 2007",
+              "version 3 of the GNU General Public License",
+              "version 3 of the GNU Lesser General Public License",
+              "GPL 3.0",
+              "GPL3",
+              "GPL-3",
+              "GPL version 3",
+              "General Public License v3",
+              "NonCommercial",
+              "Additional Grant of Patent Rights Version",
+              "subject to the Facebook Developer Principles",
+              "and not-for-profit purposes",
+              "for working with ICE",
+              "due to their collaboration with US Immigration"
+            ],
+            "nocase": true,
+            "flags": "gi",
+            "fail-on-non-existent": false,
+            "display-result-context": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Prohibited-License/"
+      },
+      "third-party-license-file": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-exists",
+          "options": {
+            "globsAll": [
+              "**/LICENSE*",
+              "**/COPYING*",
+              "**/COPYRIGHT*",
+              "**/GPL*",
+              "**/THANK*",
+              "**/PATENT*"
+            ],
+            "nocase": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Third-Party-License-File/"
+      },
+      "hidden-or-generated-file": {
+        "level": "warning",
+        "rule": {
+          "type": "file-not-exists",
+          "options": {
+            "globsAll": [
+              "**/.*",
+              "**/*generated*",
+              "**/*pycache*",
+              "**/*target*",
+              "**/out*",
+              "**/dist*"
+            ],
+            "nocase": true,
+            "dirs": true
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Hidden-Generated-File"
+      },
+      "large-file": {
+        "level": "warning",
+        "rule": {
+          "type": "large-file",
+          "options": {
+            "globsAll": [
+              "**/*"
+            ],
+            "size": 500000
+          }
+        },
+        "policyUrl": "https://w.amazon.com/bin/view/Open_Source/Tools/Repolinter/Ruleset/Large-File"
+      }
+    }
+  }
+  

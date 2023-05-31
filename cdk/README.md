@@ -1,0 +1,1 @@
+# This folder contains a sample to deploy the connector

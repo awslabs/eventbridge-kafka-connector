@@ -52,3 +52,9 @@ docker-compose-local.yml
 gen
 .env
 DS_STORE
+cdk/cdk.out
+cdk/kafkaProducer/kafkaProducer.iml
+cdk/kafkaProducer/target/
+cdk/kafkaProducer/dependency-reduced-pom.xml
+cdk/kafkaProducer/docker-compose.yml
+cdk/kafkaProducer/scripts
