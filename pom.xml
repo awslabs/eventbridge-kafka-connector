@@ -224,6 +224,7 @@
                             <excludes>
                                 <exclude>**/README</exclude>
                                 <exclude>**/NOTICE</exclude>
+                                <exclude>**/commitlint.config.js</exclude>
                                 <exclude>**/THIRD-PARTY-LICENSES</exclude>
                                 <exclude>src/test/resources/**</exclude>
                                 <exclude>src/main/resources/**</exclude>
