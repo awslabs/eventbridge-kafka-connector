@@ -1,6 +1,5 @@
 name: Java Build
-permissions:
-  contents: read
+permissions: {}
 
 on:
   push:

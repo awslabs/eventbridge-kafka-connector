@@ -1,6 +1,5 @@
 name: Conventional Commits
-permissions:
-  contents: read
+permissions: {}
 
 on:
   pull_request:
