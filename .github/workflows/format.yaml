@@ -1,6 +1,5 @@
 name: Java Code Format
-permissions: 
-  contents: read
+permissions: {}
 
 on:
   push:

@@ -1,0 +1,30 @@
+name: Conventional Commits
+permissions: {}
+
+on:
+  pull_request:
+    branches: ["main", "release-*"]
+
+concurrency:
+  group: commit-lint-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  commits:
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        node: ["20"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install commitlint
+        run: npm install -g @commitlint/cli @commitlint/config-conventional
+      - name: Verify conventional commits
+        run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
