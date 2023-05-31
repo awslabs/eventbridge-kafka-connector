@@ -1,8 +1,7 @@
 /*
- * // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * // SPDX-License-Identifier: Apache-2.0
+ * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
  */
-
 package software.amazon.event.kafkaconnector;
 
 import static software.amazon.event.kafkaconnector.EventBridgeSinkConfig.CONFIG_DEF;
