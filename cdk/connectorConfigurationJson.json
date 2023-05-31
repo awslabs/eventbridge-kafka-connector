@@ -1,0 +1,14 @@
+{
+  "connector.class": "software.amazon.event.kafkaconnector.EventBridgeSinkConnector",
+  "topics": "events",
+  "aws.eventbridge.eventbus.arn": "arn:aws:events:us-east-1:00000000000:event-bus/default",
+  "aws.eventbridge.region": "us-east-1",
+  "aws.eventbridge.connector.id": "eventBridgeSinkConnector",
+  "tasks.max": "1",
+  "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+  "value.converter": "com.amazonaws.services.schemaregistry.kafkaconnect.AWSKafkaAvroConverter",
+  "value.converter.region": "us-east-1",
+  "value.converter.registry.name": "default-registry",
+  "value.converter.avroRecordType": "GENERIC_RECORD"
+}
+
