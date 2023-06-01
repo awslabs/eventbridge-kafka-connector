@@ -27,7 +27,17 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
             <version>${log4j.version}</version>
         </dependency>
         <dependency>
@@ -76,32 +86,8 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
-    <developers>
-        <developer>
-            <id>amazonwebservices</id>
-            <organization>Amazon Web Services</organization>
-            <organizationUrl>https://aws.amazon.com</organizationUrl>
-            <roles>
-                <role>developer</role>
-            </roles>
-        </developer>
-    </developers>
-    <issueManagement>
-        <url>https://github.com/awslabs/eventbridge-kafka-connector/issues</url>
-        <system>github</system>
-    </issueManagement>
-    <licenses>
-        <license>
-            <name>Apache License, Version 2.0</name>
-            <url>https://aws.amazon.com/apache2.0</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-    <scm>
-        <url>http://github.com/awslabs/eventbridge-kafka-connector/tree/main</url>
-        <connection>scm:git:git://github.com/awslabs/eventbridge-kafka-connector.git</connection>
-        <developerConnection>scm:git:ssh://github.com/awslabs/eventbridge-kafka-connector.git</developerConnection>
-    </scm>
+
 </project>

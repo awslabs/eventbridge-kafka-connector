@@ -45,7 +45,8 @@ export class Connector extends Construct {
             runtime: lambda.Runtime.PYTHON_3_9,
             entry: path.join(__dirname, '../customResources/connectorPluginDownload'),
             handler: 'on_event',
-            timeout: Duration.seconds(15*59)
+            timeout: Duration.seconds(60),
+            memorySize: 512
         })
 
         pluginBucket.grantReadWrite(pluginDownloadEventHandler)

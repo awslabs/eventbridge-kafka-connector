@@ -90,6 +90,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
 
         mskSG.addIngressRule(producer.securityGroup, Port.tcp(9098))
 
+
         const connectorLogGroup = new logs.LogGroup(this, 'connectorLogGroup', {
             logGroupName: '/aws/mskconnect/eventBridgeSinkConnector',
             removalPolicy: RemovalPolicy.DESTROY,
@@ -120,6 +121,8 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
                 connectorRole,
                 connectorLogGroup
             })
+
+            mskSG.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.tcp(9098))
 
         }
 
