@@ -30,6 +30,7 @@
         <org.apache.commons.version>3.12.0</org.apache.commons.version>
         <org.apache.logging.log4j.version>2.20.0</org.apache.logging.log4j.version>
         <org.hamcrest.version>2.2</org.hamcrest.version>
+        <org.jacoco.version>0.8.10</org.jacoco.version>
         <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
         <org.mockito.version>5.3.1</org.mockito.version>
         <org.slf4j.version>1.7.36</org.slf4j.version>
@@ -277,6 +278,26 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${org.jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <resources>
