@@ -37,9 +37,10 @@ public class EventBridgeSinkTask extends SinkTask {
   public void start(Map<String, String> properties) {
     log.info("Starting Kafka Connect task for EventBridgeSinkConnector");
 
-    config = new EventBridgeSinkConfig(properties);
-    eventBridgeWriter = new EventBridgeWriter(config);
+    var config = new EventBridgeSinkConfig(properties);
+    var eventBridgeWriter = new EventBridgeWriter(config);
 
+    ErrantRecordReporter dlq;
     try {
       dlq = context.errantRecordReporter();
     } catch (NoSuchMethodError | NoClassDefFoundError e) {
@@ -48,6 +49,15 @@ public class EventBridgeSinkTask extends SinkTask {
     if (dlq != null) {
       log.info("Dead-letter queue enabled");
     }
+
+    startInternal(config, eventBridgeWriter, dlq);
+  }
+
+  void startInternal(
+      EventBridgeSinkConfig config, EventBridgeWriter eventBridgeWriter, ErrantRecordReporter dlq) {
+    this.config = config;
+    this.eventBridgeWriter = eventBridgeWriter;
+    this.dlq = dlq;
     statusReporter.startAsync();
   }
 

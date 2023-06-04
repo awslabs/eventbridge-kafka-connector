@@ -29,6 +29,7 @@
         <joda-time.version>2.12.5</joda-time.version>
         <org.apache.commons.version>3.12.0</org.apache.commons.version>
         <org.apache.logging.log4j.version>2.20.0</org.apache.logging.log4j.version>
+        <org.assertj.version>3.24.2</org.assertj.version>
         <org.hamcrest.version>2.2</org.hamcrest.version>
         <org.jacoco.version>0.8.10</org.jacoco.version>
         <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
@@ -62,6 +63,11 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -173,6 +179,12 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j-impl</artifactId>
                 <version>${org.apache.logging.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${org.assertj.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
