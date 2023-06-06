@@ -4,18 +4,18 @@
  */
 package software.amazon.event.kafkaconnector.exceptions;
 
-import software.amazon.event.kafkaconnector.EventBridgeWriterRecord;
+import org.apache.kafka.connect.sink.SinkRecord;
 
 public class EventBridgePartialFailureResponse extends RuntimeException {
 
-  public EventBridgePartialFailureResponse(EventBridgeWriterRecord eventBridgeWriterRecord) {
+  public EventBridgePartialFailureResponse(SinkRecord sinkRecord, String message, Throwable cause) {
     super(
         String.format(
-            "statusCode=%s errorMessage=%s topic=%s partition=%d offset=%d",
-            eventBridgeWriterRecord.getErrorCode(),
-            eventBridgeWriterRecord.getErrorMessage(),
-            eventBridgeWriterRecord.getSinkRecord().topic(),
-            eventBridgeWriterRecord.getSinkRecord().kafkaPartition(),
-            eventBridgeWriterRecord.getSinkRecord().kafkaOffset()));
+            "errorMessage=%s topic=%s partition=%d offset=%d cause=%s",
+            message,
+            sinkRecord.topic(),
+            sinkRecord.kafkaPartition(),
+            sinkRecord.kafkaOffset(),
+            cause));
   }
 }

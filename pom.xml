@@ -28,6 +28,7 @@
         <connect.api.version>3.5.0</connect.api.version>
         <joda-time.version>2.12.5</joda-time.version>
         <org.apache.commons.version>3.12.0</org.apache.commons.version>
+        <org.assertj.version>3.24.2</org.assertj.version>
         <org.awaitility.version>4.2.0</org.awaitility.version>
         <org.hamcrest.version>2.2</org.hamcrest.version>
         <org.jacoco.version>0.8.10</org.jacoco.version>
@@ -56,6 +57,11 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.awaitility</groupId>
@@ -173,6 +179,12 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${connect.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${org.assertj.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>
