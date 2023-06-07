@@ -1,31 +1,31 @@
 {
   "type": "record",
   "name": "Notification",
-  "namespace": "software.amazon.event.kafkaconnector",
   "fields": [
     {
       "name": "source",
-      "type": [
-        "null",
-        "string"
-      ],
-      "default": null
+      "type": "string"
     },
     {
       "name": "eventType",
-      "type": [
-        "null",
-        "string"
-      ],
-      "default": null
+      "type": "string"
     },
     {
-      "name": "eventDetails",
-      "type": [
-        "null",
-        "string"
-      ],
-      "default": null
+      "name": "eventDetail",
+      "type": {
+        "type": "record",
+        "name": "EventDetail",
+        "fields": [
+          {
+            "name": "userId",
+            "type": "string"
+          },
+          {
+            "name": "total",
+            "type": "double"
+          }
+        ]
+      }
     }
   ]
 }

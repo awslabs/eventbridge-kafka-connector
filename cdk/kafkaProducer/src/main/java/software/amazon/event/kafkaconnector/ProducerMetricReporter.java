@@ -18,6 +18,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class allows the producer to report how many records have been sent in a scheduled interval
+ */
 public class ProducerMetricReporter extends AbstractScheduledService {
     private static final Logger log = LogManager.getLogger(ProducerMetricReporter.class);
     private final KafkaProducer<String, GenericRecord> kafkaProducer;
@@ -30,7 +33,6 @@ public class ProducerMetricReporter extends AbstractScheduledService {
         this.timeUnit = timeUnit;
 
     }
-
 
     @Override
     protected void runOneIteration() {
