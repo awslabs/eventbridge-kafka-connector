@@ -70,7 +70,7 @@ export class Connector extends Construct {
             runtime: lambda.Runtime.PYTHON_3_9,
             entry: path.join(__dirname, '../customResources/connectorPlugin'),
             handler: 'on_event',
-            timeout: Duration.seconds(50)
+            timeout: Duration.minutes(14)
         })
         pluginCreationEventHandler.addToRolePolicy(new iam.PolicyStatement({
             actions: [
@@ -107,6 +107,8 @@ export class Connector extends Construct {
             .stringify(connectorConfig)
             .replace("00000000000", props.account)
             .replace("us-east-1", props.region)
+            .replace('/default', '/eventbridge-sink-eventbus')
+            .replace('default-registry', 'streaming')
         )
 
 

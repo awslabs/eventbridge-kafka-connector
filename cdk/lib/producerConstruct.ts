@@ -9,7 +9,7 @@ import * as ecs from "aws-cdk-lib/aws-ecs";
 import {Compatibility, ContainerImage, LogDriver} from "aws-cdk-lib/aws-ecs";
 import {PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import * as path from "path";
-import {aws_iam} from "aws-cdk-lib";
+import {aws_glue, aws_iam} from "aws-cdk-lib";
 
 export interface ProducerProps {
     vpc: ec2.Vpc;
@@ -17,12 +17,15 @@ export interface ProducerProps {
     region: string;
     account: string;
     clusterName: string;
+    schemaRegistry: aws_glue.CfnRegistry;
 }
 
 export class Producer extends Construct {
 
     public readonly securityGroup: ec2.SecurityGroup;
     public readonly taskRole: Role;
+    public readonly ecsCluster: ecs.Cluster;
+
 
     constructor(scope: Construct, id: string, props: ProducerProps) {
         super(scope, id);
@@ -30,6 +33,8 @@ export class Producer extends Construct {
         const cluster = new ecs.Cluster(this, "cluster", {
             vpc: props.vpc
         });
+
+        this.ecsCluster = cluster
 
         this.securityGroup = new ec2.SecurityGroup(this, 'securityGroup', {
             vpc: props.vpc
@@ -55,7 +60,8 @@ export class Producer extends Construct {
             environment: {
                 BOOTSTRAP_SERVERS: props.bootstrapServers,
                 TOPIC_NAME: 'events',
-                NUMBER_OF_PRODUCERS: '1'
+                NUMBER_OF_PRODUCERS: '1',
+                SCHEMA_REGISTRY_NAME : props.schemaRegistry.name
             },
             cpu: 1024,
             memoryLimitMiB: 2048
@@ -103,18 +109,6 @@ export class Producer extends Construct {
             ],
             resources: ['*']
         }))
-
-        this.taskRole.addToPolicy(new PolicyStatement({
-            actions: [
-                "logs:PutLogEvents",
-                "logs:GetLogEvents",
-                "logs:DescribeLogStreams",
-                "logs:CreateLogStream"
-            ],
-            effect: aws_iam.Effect.ALLOW,
-            resources: ['*']
-        }))
-
 
     }
 }

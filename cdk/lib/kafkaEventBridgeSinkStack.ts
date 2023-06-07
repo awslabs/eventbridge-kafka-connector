@@ -18,6 +18,11 @@ import {RemovalPolicy} from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as logs from "aws-cdk-lib/aws-logs";
 import {PolicyStatement} from "aws-cdk-lib/aws-iam";
+import {Analyzer} from "./analyzerConstruct";
+import * as glue from 'aws-cdk-lib/aws-glue';
+import * as eb from 'aws-cdk-lib/aws-events';
+import {NagSuppressions} from "cdk-nag";
+
 
 export interface KafkaEventBridgeSinkStackProps extends cdk.StackProps {
     deploymentMode: string;
@@ -80,16 +85,41 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             }
         })
 
+        const schemaRegistry = new glue.CfnRegistry(this, 'registry', {
+            name: 'streaming',
+            description: 'Schema Registry for deploying the EventBridge Sink connector',
+        });
+
+        const eventBus = new eb.EventBus(this, 'eventbus', {
+           eventBusName: 'eventbridge-sink-eventbus'
+        })
+
+
         const producer = new Producer(this, 'kafkaProducer', {
             vpc,
             bootstrapServers: bootstrapServers.getResponseField('BootstrapBrokerStringSaslIam'),
             region: this.region,
             account: this.account,
-            clusterName: cluster.clusterName
+            clusterName: cluster.clusterName,
+            schemaRegistry: schemaRegistry,
         })
 
-        mskSG.addIngressRule(producer.securityGroup, Port.tcp(9098))
+        const transactionAnalyzer = new Analyzer(this, 'transactionAnalyzer', {
+            vpc,
+            ecsCluster: producer.ecsCluster,
+            bootstrapServers: bootstrapServers.getResponseField('BootstrapBrokerStringSaslIam'),
+            region: this.region,
+            account: this.account,
+            clusterName: cluster.clusterName,
+            schemaRegistry: schemaRegistry,
+        })
 
+        transactionAnalyzer.node.addDependency(producer)
+
+        mskSG.addIngressRule(producer.securityGroup, Port.tcp(9098))
+        mskSG.addIngressRule(transactionAnalyzer.securityGroup, Port.tcp(9098))
+        mskSG.addIngressRule(mskSG, ec2.Port.tcp(9098))
+        mskSG.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.tcp(9098))
 
         const connectorLogGroup = new logs.LogGroup(this, 'connectorLogGroup', {
             logGroupName: '/aws/mskconnect/eventBridgeSinkConnector',
@@ -107,7 +137,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             vpc
         })
 
-        mskSG.addIngressRule(mskSG, ec2.Port.tcp(9098))
+
 
         if (props.deploymentMode === 'FULL') {
             const connector = new Connector(this, 'connector', {
@@ -121,19 +151,16 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
                 connectorRole,
                 connectorLogGroup
             })
-
-            mskSG.addIngressRule(Peer.ipv4(vpc.vpcCidrBlock), Port.tcp(9098))
-
         }
 
         connectorRole.addToPolicy(new iam.PolicyStatement({
             actions: ['events:PutEvents'],
-            resources: [`arn:aws:events:${this.region}:${this.account}:event-bus/default`]
+            resources: [`arn:aws:events:${this.region}:${this.account}:event-bus/eventbridge-sink-eventbus`]
         }))
 
         connectorRole.addToPolicy(new iam.PolicyStatement({
             actions: ['glue:GetSchemaVersion'],
-            resources: ['*']
+            resources: [`arn:aws:glue:${this.region}:${this.account}:registry/${schemaRegistry.name}/notifications`]
         }))
 
         connectorRole.addToPolicy(new PolicyStatement({
@@ -160,11 +187,6 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
                 "kafka-cluster:DescribeGroup"
             ],
             resources: [`arn:aws:kafka:${this.region}:${this.account}:group/${cluster.clusterName}/*`]
-        }))
-
-        connectorRole.addToPolicy(new PolicyStatement({
-            actions: ['glue:GetSchemaVersion'],
-            resources: ['*']
         }))
 
 

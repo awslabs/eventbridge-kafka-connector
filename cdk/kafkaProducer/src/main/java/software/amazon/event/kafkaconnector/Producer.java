@@ -65,6 +65,9 @@ public class Producer {
 
     }
 
+    /**
+     * @return {@link KafkaProducer} Return the created Kafka Producer
+     */
     private static KafkaProducer<String, GenericRecord> createKafkaProducer() {
 
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, System.getenv().getOrDefault("BOOTSTRAP_SERVERS", "localhost:9092"));
@@ -72,7 +75,7 @@ public class Producer {
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, GlueSchemaRegistryKafkaSerializer.class.getName());
         properties.put(AWSSchemaRegistryConstants.DATA_FORMAT, DataFormat.AVRO.name());
         properties.put(AWSSchemaRegistryConstants.AWS_REGION, System.getenv().getOrDefault("AWS_REGION", "us-east-1"));
-        properties.put(AWSSchemaRegistryConstants.REGISTRY_NAME, System.getenv().getOrDefault("SCHEMA_REGISTRY_NAME", "default-registry"));
+        properties.put(AWSSchemaRegistryConstants.REGISTRY_NAME, System.getenv().getOrDefault("SCHEMA_REGISTRY_NAME", "streaming"));
         properties.put(AWSSchemaRegistryConstants.SCHEMA_NAME, System.getenv().getOrDefault("TOPIC_NAME", "events"));
         properties.put(AWSSchemaRegistryConstants.SCHEMA_AUTO_REGISTRATION_SETTING, true);
 
@@ -86,6 +89,10 @@ public class Producer {
         return new KafkaProducer<>(properties);
     }
 
+    /**
+     * @param schemaFile Name of the .avsc file in the resources folder
+     * @return {@link Schema} Return the created schema of the file
+     */
     private static Schema createSchema(String schemaFile) {
         Schema schema = null;
         try {
@@ -97,7 +104,12 @@ public class Producer {
         }
         return schema;
     }
-
+    /**
+     * @param topicName The name of the topic to be created
+     * @param partitionCount The number of partitions for the topic
+     * @param replicationFactor The replication factor of the topic. If DEV is true this will be 1
+     * @return {@link NewTopic} Return the new topic created
+     */
     private static NewTopic createTopic(String topicName, Integer partitionCount, Short replicationFactor) {
         if (System.getenv().getOrDefault("DEV", null) != null) {
             replicationFactor = 1;

@@ -5,6 +5,7 @@
 #
 
 import boto3
+import time
 
 client = boto3.client('kafkaconnect')
 
@@ -51,4 +52,14 @@ def on_update(event):
 
 
 def on_delete(event):
-    pass
+    physical_id = event["PhysicalResourceId"]
+    print("delete resource with physical id %s" % physical_id)
+    connector_active = True
+    while connector_active:
+        try:
+            response = client.delete_custom_plugin(
+                customPluginArn=physical_id
+            )
+            connector_active = False
+        except:
+            time.sleep(10000)

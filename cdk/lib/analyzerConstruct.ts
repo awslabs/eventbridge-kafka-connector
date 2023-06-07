@@ -5,31 +5,31 @@
 
 import {Construct} from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+import * as logs from "aws-cdk-lib/aws-logs";
+import {RetentionDays} from "aws-cdk-lib/aws-logs";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import {Compatibility, ContainerImage, LogDriver} from "aws-cdk-lib/aws-ecs";
 import {PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import * as path from "path";
-import {aws_iam} from "aws-cdk-lib";
+import {aws_glue, aws_iam, RemovalPolicy} from "aws-cdk-lib";
 
-export interface ProducerProps {
+export interface AnalyzerProps {
+    ecsCluster: ecs.Cluster;
     vpc: ec2.Vpc;
     bootstrapServers: string;
     region: string;
     account: string;
     clusterName: string;
+    schemaRegistry: aws_glue.CfnRegistry;
 }
 
-export class Producer extends Construct {
+export class Analyzer extends Construct {
 
     public readonly securityGroup: ec2.SecurityGroup;
     public readonly taskRole: Role;
 
-    constructor(scope: Construct, id: string, props: ProducerProps) {
+    constructor(scope: Construct, id: string, props: AnalyzerProps) {
         super(scope, id);
-
-        const cluster = new ecs.Cluster(this, "cluster", {
-            vpc: props.vpc
-        });
 
         this.securityGroup = new ec2.SecurityGroup(this, 'securityGroup', {
             vpc: props.vpc
@@ -39,7 +39,6 @@ export class Producer extends Construct {
             assumedBy: new ServicePrincipal('ecs-tasks.amazonaws.com')
         })
 
-
         const taskDefinition = new ecs.TaskDefinition(this, 'taskDefinition', {
             compatibility: Compatibility.FARGATE,
             cpu: '1024',
@@ -48,21 +47,22 @@ export class Producer extends Construct {
         })
 
         taskDefinition.addContainer('container', {
-            image: ContainerImage.fromAsset(path.join(__dirname, '../kafkaProducer')),
+            image: ContainerImage.fromAsset(path.join(__dirname, '../transactionAnalyzer')),
             logging: LogDriver.awsLogs({
                 streamPrefix: 'kafkaProducer',
             }),
             environment: {
                 BOOTSTRAP_SERVERS: props.bootstrapServers,
                 TOPIC_NAME: 'events',
-                NUMBER_OF_PRODUCERS: '1'
+                NOTIFICATIONS_TOPIC_NAME: 'notifications',
+                SCHEMA_REGISTRY_NAME : props.schemaRegistry.name
             },
             cpu: 1024,
             memoryLimitMiB: 2048
         })
 
         const service = new ecs.FargateService(this, 'service', {
-            cluster,
+            cluster: props.ecsCluster,
             taskDefinition,
             securityGroups: [this.securityGroup]
         })
@@ -104,16 +104,6 @@ export class Producer extends Construct {
             resources: ['*']
         }))
 
-        this.taskRole.addToPolicy(new PolicyStatement({
-            actions: [
-                "logs:PutLogEvents",
-                "logs:GetLogEvents",
-                "logs:DescribeLogStreams",
-                "logs:CreateLogStream"
-            ],
-            effect: aws_iam.Effect.ALLOW,
-            resources: ['*']
-        }))
 
 
     }
