@@ -1,5 +1,6 @@
 name: Java Build
-permissions: {}
+permissions:
+  pull-requests: write
 
 on:
   push:
@@ -32,5 +33,5 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
           cache: 'maven'
-      - name: Build JAR Artifacts
-        run: mvn --batch-mode --errors --update-snapshots clean package -Drevision=$(git describe --tags --always)
+      - name: Build JAR Artifacts and verify coverage
+        run: mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean package -Drevision=$(git describe --tags --always)

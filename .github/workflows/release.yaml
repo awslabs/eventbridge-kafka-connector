@@ -39,7 +39,7 @@ jobs:
           echo "Retrieving tag from Github ref"
           echo "TAG=$(basename "${{ github.ref }}")" >> $GITHUB_ENV
       - name: Build JAR artifacts
-        run: mvn --batch-mode --errors --update-snapshots clean package -Drevision=${TAG}
+        run: mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean package -Drevision=${TAG}
       - name: Create Github Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

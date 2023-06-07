@@ -29,6 +29,6 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
       - name: Verify code format with Maven
-        run: mvn --batch-mode --errors com.spotify.fmt:fmt-maven-plugin:check
+        run: mvn --batch-mode --no-transfer-progress --errors com.spotify.fmt:fmt-maven-plugin:check
       - name: Verify licenses with Maven
-        run: mvn --batch-mode --errors  license:check
+        run: mvn --batch-mode --no-transfer-progress --errors  license:check
