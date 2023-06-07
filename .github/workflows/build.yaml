@@ -35,3 +35,10 @@ jobs:
           cache: 'maven'
       - name: Build JAR Artifacts and verify coverage
         run: mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean package -Drevision=$(git describe --tags --always)
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce
+        with:
+          name: maven-build-java-${{ matrix.java }}
+          path: target/
+          if-no-files-found: error
+          retention-days: 5
