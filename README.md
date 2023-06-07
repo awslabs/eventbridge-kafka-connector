@@ -89,6 +89,12 @@ configuration options, this connector defines the following configuration proper
 | `aws.eventbridge.retries.delay`      | No       | `200`                      | The retry delay in milliseconds between each retry attempt.                                                                                                                                                                                                                                                                                                |
 | `aws.eventbridge.iam.role.arn`       | No       |                            | Uses [STS](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html) to assume the specified IAM role with periodic refresh. The connector ID is used as the session name.                                                                                                                                                                |
 | `aws.eventbridge.iam.external.id`    | No       |                            | The IAM external id (optional) when role-based authentication is used.                                                                                                                                                                                                                                                                                     |
+
+> **Note**  
+> When using the default retry configuration (or retries > 0), the connector provides *at-least-once* delivery semantics
+> for **valid** Kafka records, i.e., records which can be correctly (de)serialized before making a delivery attempt to
+> EventBridge.
+
 ### Examples
 
 #### JSON Encoding
