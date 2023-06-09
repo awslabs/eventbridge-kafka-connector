@@ -38,14 +38,14 @@ Java Development Kit (JDK 11 or later).
 
 Clone the repo:
 
-```console
+```shell
 git clone https://github.com/awslabs/eventbridge-kafka-connector.git
 cd eventbridge-kafka-connector
 ```
 
 Create JAR artifacts:
 
-```console
+```shell
 mvn clean package -Drevision=$(git describe --tags --always)
 ```
 
@@ -56,7 +56,7 @@ The following steps describe how to clone the repo and perform a clean packaging
 
 Clone the repo:
 
-```console
+```shell
 # clone repo
 git clone https://github.com/awslabs/eventbridge-kafka-connector.git
 cd eventbridge-kafka-connector
@@ -64,7 +64,7 @@ cd eventbridge-kafka-connector
 
 Create JAR artifacts:
 
-```console
+```shell
 docker run --rm -v $(pwd):/src -w /src -it maven:3-eclipse-temurin-11 \
 mvn clean package -Drevision=$(git describe --tags --always)
 ```
@@ -105,7 +105,7 @@ The following minimal configuration configures the connector with default values
 `"json-values-topic"` with record keys as `String` and `JSON` values (without schema), and sending events to the custom
 EventBridge event bus `"kafkabus"` in region `"us-east-1"`.
 
-```json5
+```yaml
 {
     "name": "EventBridgeSink-Json",
     "config": {
@@ -135,7 +135,7 @@ Continuing the example above, the following configuration defines a dead-letter 
 which will be created with an replication factor of `1` if it does not exist. Records which cannot be converted or
 delivered to EventBridge will be sent to this DLQ.
 
-```json5
+```yaml
 {
     "name": "EventBridgeSink-Json",
     "config": {
@@ -147,7 +147,7 @@ delivered to EventBridge will be sent to this DLQ.
         "aws.eventbridge.region": "us-east-1",
         "key.converter": "org.apache.kafka.connect.storage.StringConverter",
         "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-        "value.converter.schemas.enable": false
+        "value.converter.schemas.enable": false,
         "errors.tolerance":"all",
         "errors.deadletterqueue.topic.name":"json-dlq",
         "errors.deadletterqueue.topic.replication.factor":1
@@ -162,7 +162,7 @@ customized retry behavior, and IAM-based authentication, and how to deserialize 
 JSON-encoded keys) using [AWS Glue Schema Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html)
 (GSR).
 
-```json5
+```yaml
 {
   "name": "EventBridgeSink-Avro",
   "config": {
@@ -250,7 +250,7 @@ options.
 
 The connector only requires `events:PutEvents` permission as shown in the IAM policy example below.
 
-```json5
+```yaml
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -273,7 +273,7 @@ The connector only requires `events:PutEvents` permission as shown in the IAM po
 
 The connector can be deployed like any Kafka connector e.g., using the Kafka Connect REST API:
 
-```console
+```shell
 curl -i -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://<kafka-connect-api>:<kafka-connect-port>/connectors/ -d @connector_config.json
 ```
 
@@ -287,7 +287,7 @@ a custom plugin (connector).
 Below is an example of an event received by an EventBridge target using the minimal JSON configuration described
 [above](#json-encoding).
 
-```json5
+```yaml
 {
     // fields set by EventBridge
     "version": "0",
@@ -329,7 +329,7 @@ The following Rule pattern would match the above event, i.e., any event where:
 - `detail.key` **starts with** `order` and
 - the field `orderItems` **exists** in the `details.value` object
 
-```json5
+```yaml
 {
   "source": ["kafka-connect.my-json-values-connector"],
   "detail": {

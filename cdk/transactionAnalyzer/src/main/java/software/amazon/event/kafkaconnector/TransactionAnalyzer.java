@@ -14,32 +14,21 @@ import com.amazonaws.services.schemaregistry.utils.AvroRecordType;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
-import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.TopicConfig;
-import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Suppressed;
-import org.apache.kafka.streams.kstream.TimeWindows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Duration;
-import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * This class reads records from an input topic (events), filters events which have a total of over 180 and sends those
@@ -49,7 +38,7 @@ public class TransactionAnalyzer {
     private static final Logger log = LoggerFactory.getLogger(TransactionAnalyzer.class);
     private static final Properties props = new Properties();
     private static final Schema.Parser parser = new Schema.Parser();
-
+    private static final CountDownLatch latch = new CountDownLatch(1);
 
     public static void main(String[] args) {
 
@@ -61,77 +50,56 @@ public class TransactionAnalyzer {
 
         var notificationSchema = createSchema(notificationSchemaFile);
         var properties = setConfiguration();
-        var newNotificationsTopic = createTopic(notificationsTopic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
-        var newSourceTopic = createTopic(sourceTopic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
 
+        var topicCreator = new TransactionAnalyzerTopicCreator(properties);
+        topicCreator.createTopic(notificationsTopic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
+        topicCreator.createTopic(sourceTopic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
 
         StreamsBuilder builder = new StreamsBuilder();
         final KStream<String, GenericRecord> events = builder.stream(sourceTopic);
 
-       events
+        events
                 .filter((key, value) -> Double.parseDouble(value.get("total").toString()) > 195.00)
                 .map((userId, value) -> {
-                    log.info("Sending record downstream ...");
-                    var notification = new GenericData.Record(notificationSchema);
-                    notification.put("source", "transactionAnalyzer");
-                    notification.put("eventType", "suspiciousActivity");
-
-                    var eventDetail = new GenericData.Record(notificationSchema.getField("eventDetail").schema());
-
-                    eventDetail.put("userId", userId);
-                    eventDetail.put("total", Double.parseDouble(value.get("total").toString()));
-                    notification.put("eventDetail", eventDetail);
-
+                    var notification = createNotificationRecord(userId, value, notificationSchema);
+                    //As this is synthetic test data we can log any value as it does not contain PII
+                    log.info("Detected suspicious transaction. Sending notification to topic. UserId: {} Value: {}", userId, value.get("total").toString());
                     return KeyValue.pair(UUID.randomUUID().toString(), notification);
                 })
                 .to(notificationsTopic);
 
-        var streams = new KafkaStreams(builder.build(), props);
+        var topology = builder.build();
+        var streams = new KafkaStreams(topology, props);
 
-        streams.setUncaughtExceptionHandler(exception -> {
-            log.error("Kafka-Streams uncaught exception occurred. Shutting down application.");
-            return StreamsUncaughtExceptionHandler.StreamThreadExceptionResponse.SHUTDOWN_APPLICATION;
+
+        //Register a shutdown hook to close the Kafka Streams application
+        Runtime.getRuntime().addShutdownHook(new Thread("shutdown-hook") {
+            @Override
+            public void run() {
+                streams.close();
+                latch.countDown();
+            }
         });
-        log.info("Starting Transaction Analyzer ...");
-        streams.start();
 
+        try {
+            log.info("Starting Transaction Analyzer ...");
+            streams.start();
+            latch.await();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
+        } catch (Throwable e) {
+            log.info("Transaction Analyzer failed. Shutting down application.");
+            System.exit(1);
+        }
+        log.info("Transaction Analyzer has completed execution. Shutting down application.");
+        System.exit(0);
 
     }
 
     /**
-     * @param topicName         The name of the topic to be created
-     * @param partitionCount    The number of partitions for the topic
-     * @param replicationFactor The replication factor of the topic. If DEV is true this will be 1
-     * @return {@link NewTopic} Return the new topic created
+     * @return Returns {@link Properties} used for Kafka Streams and Kafka Admin clients
      */
-    private static NewTopic createTopic(String topicName, Integer partitionCount, Short replicationFactor) {
-        if (System.getenv().getOrDefault("DEV", null) != null) {
-            replicationFactor = 1;
-        }
-        var admin = Admin.create(props);
-        var newTopic = new NewTopic(topicName, partitionCount, replicationFactor);
-
-        try {
-            var result = admin.createTopics(Collections.singleton(newTopic));
-            result.all().get(30, TimeUnit.SECONDS);
-            log.info("Topic created: " + topicName);
-        } catch (ExecutionException e) {
-            if (e.getCause() != null && e.getCause() instanceof TopicExistsException) {
-                log.info("Topic exists: {}", newTopic);
-            } else {
-                log.error("Topic create failed with: " + e);
-            }
-        } catch (InterruptedException | TimeoutException e) {
-            log.error("Topic create failed with: {}", e.getMessage());
-        }
-        admin.close();
-        return newTopic;
-
-    }
-
     private static Properties setConfiguration() {
+        log.info("Setting Kafka Configuration");
 
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, "transaction-analyzer-kafka-streams");
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, System.getenv().getOrDefault("BOOTSTRAP_SERVERS", "localhost:9092"));
@@ -151,6 +119,8 @@ public class TransactionAnalyzer {
             props.put("sasl.client.callback.handler.class", "software.amazon.msk.auth.iam.IAMClientCallbackHandler");
         }
 
+        log.debug("Used Kafka Configuration: {}", props);
+
         return props;
     }
 
@@ -159,6 +129,7 @@ public class TransactionAnalyzer {
      * @return {@link Schema} Return the created schema of the file
      */
     private static Schema createSchema(String schemaFile) {
+        log.info("Creating schema for file: {}", schemaFile);
         Schema schema = null;
         try {
             ClassLoader classloader = Thread.currentThread().getContextClassLoader();
@@ -170,5 +141,23 @@ public class TransactionAnalyzer {
         return schema;
     }
 
+    /**
+     * @param userId The ID of the user in String format
+     * @param value  The transaction record in GenericRecord format
+     * @param notificationSchema The schema for the notification record
+     * @return {@link GenericRecord} A record with the provided schema
+     */
+    private static GenericRecord createNotificationRecord(String userId, GenericRecord value,  Schema notificationSchema) {
+        log.debug("Creating notfication record for");
+        var notification = new GenericData.Record(notificationSchema);
+        notification.put("source", "transactionAnalyzer");
+        notification.put("eventType", "suspiciousActivity");
+
+        var eventDetail = new GenericData.Record(notificationSchema.getField("eventDetail").schema());
+        eventDetail.put("userId", userId);
+        eventDetail.put("total", Double.parseDouble(value.get("total").toString()));
+        notification.put("eventDetail", eventDetail);
+        return notification;
+    }
 
 }
