@@ -1,7 +1,7 @@
 {
   "connector.class": "software.amazon.event.kafkaconnector.EventBridgeSinkConnector",
   "topics": "notifications",
-  "aws.eventbridge.eventbus.arn": "arn:aws:events:us-east-1:00000000000:event-bus/default",
+  "aws.eventbridge.eventbus.arn": "arn:aws:events:us-east-1:00000000000:event-bus/eventbridge-sink-eventbus",
   "aws.eventbridge.region": "us-east-1",
   "aws.eventbridge.connector.id": "eventBridgeSinkConnector",
   "tasks.max": "1",

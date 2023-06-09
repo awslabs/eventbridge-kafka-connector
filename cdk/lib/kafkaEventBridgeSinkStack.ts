@@ -160,7 +160,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
 
         connectorRole.addToPolicy(new iam.PolicyStatement({
             actions: ['glue:GetSchemaVersion'],
-            resources: [`arn:aws:glue:${this.region}:${this.account}:registry/${schemaRegistry.name}/notifications`]
+            resources: [`*`]
         }))
 
         connectorRole.addToPolicy(new PolicyStatement({
