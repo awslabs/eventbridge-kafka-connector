@@ -4,24 +4,23 @@
  */
 
 import * as cdk from 'aws-cdk-lib';
+import {RemovalPolicy} from 'aws-cdk-lib';
 import {Construct} from 'constructs';
+import * as logs from 'aws-cdk-lib/aws-logs';
 import {RetentionDays} from 'aws-cdk-lib/aws-logs';
 import * as cr from 'aws-cdk-lib/custom-resources';
 import {AwsCustomResource, AwsCustomResourcePolicy} from 'aws-cdk-lib/custom-resources';
 import * as ec2 from "aws-cdk-lib/aws-ec2";
+import {Peer, Port} from "aws-cdk-lib/aws-ec2";
 import * as msk from "aws-cdk-lib/aws-msk";
 
 import {Producer} from "./producerConstruct";
-import {Peer, Port} from "aws-cdk-lib/aws-ec2";
 import {Connector} from "./connectorConstruct";
-import {RemovalPolicy} from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
-import * as logs from "aws-cdk-lib/aws-logs";
 import {PolicyStatement} from "aws-cdk-lib/aws-iam";
 import {Analyzer} from "./analyzerConstruct";
 import * as glue from 'aws-cdk-lib/aws-glue';
 import * as eb from 'aws-cdk-lib/aws-events';
-import {NagSuppressions} from "cdk-nag";
 
 
 export interface KafkaEventBridgeSinkStackProps extends cdk.StackProps {
