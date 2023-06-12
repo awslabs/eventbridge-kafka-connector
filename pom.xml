@@ -227,6 +227,7 @@
                                 <exclude>**/THIRD-PARTY-LICENSES</exclude>
                                 <exclude>src/test/resources/**</exclude>
                                 <exclude>src/main/resources/**</exclude>
+                                <exclude>cdk/**</exclude>
                             </excludes>
                         </licenseSet>
                     </licenseSets>
