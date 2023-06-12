@@ -25,8 +25,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.LOCALSTACK_DUMMY_ACCESS_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.LOCALSTACK_DUMMY_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
       AWS_DEFAULT_REGION: us-east-1
       KAFKA_TOPIC: eventbridge-e2e
     steps:
