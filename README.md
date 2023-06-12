@@ -1,5 +1,6 @@
 # Kafka Connector for Amazon EventBridge
 [![Build](https://github.com/awslabs/eventbridge-kafka-connector/actions/workflows/build.yaml/badge.svg)](https://github.com/awslabs/eventbridge-kafka-connector/actions/workflows/build.yaml)
+[![Java E2E](https://github.com/awslabs/eventbridge-kafka-connector/actions/workflows/e2e.yaml/badge.svg)](https://github.com/awslabs/eventbridge-kafka-connector/actions/workflows/e2e.yaml)
 [![Latest Release](https://img.shields.io/github/release/awslabs/eventbridge-kafka-connector.svg?logo=github&style=flat-square)](https://github.com/awslabs/eventbridge-kafka-connector/releases/latest)
 
 
