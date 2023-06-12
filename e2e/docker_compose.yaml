@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+  kafka:
+    image: docker.io/bitnami/kafka:3.4
+    ports:
+      - 9092:9092
+    environment:
+      ALLOW_PLAINTEXT_LISTENER: 'yes'
+      KAFKA_ENABLE_KRAFT: 'true'
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_BROKER_ID: 1
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_CFG_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_CFG_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_CFG_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CFG_LOG_DIRS: '/tmp/kraft-combined-logs'
+    volumes:
+      - ${PWD}/log4j.properties:/opt/bitnami/kafka/config/log4j.properties
+  connect:
+    image: docker.io/bitnami/kafka:3.4
+    depends_on:
+      - kafka
+    ports:
+      - 8083:8083
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    volumes:
+      - ${PWD}/connect-standalone.properties:/opt/bitnami/kafka/config/connect-standalone.properties
+      - ${PWD}/connect-log4j.properties:/opt/bitnami/kafka/config/connect-log4j.properties
+      - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
+    command: /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties
+  localstack:
+    image: localstack/localstack:2.1
+    ports:
+      - "127.0.0.1:4566:4566" # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559" # external services port range
+    environment:
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"

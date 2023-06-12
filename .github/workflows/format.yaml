@@ -16,7 +16,7 @@ jobs:
   format:
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-22.04 ]
         java: [ "11" ]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5

@@ -1,0 +1,70 @@
+name: Java E2E
+permissions: {}
+
+on:
+  push:
+    branches: ["main"]
+
+  pull_request:
+    branches: ["main", "release-*"]
+
+  schedule:
+    # daily at 2:30 UTC
+    - cron: "30 2 * * *"
+
+concurrency:
+  group: java-e2e-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        java: ["11", "17"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.LOCALSTACK_DUMMY_ACCESS_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.LOCALSTACK_DUMMY_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      KAFKA_TOPIC: eventbridge-e2e
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@5ffc13f4174014e2d4d4572b3d74c3fa61aeb2c2
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.java }}
+          cache: "maven"
+      - name: Build JAR Artifacts and verify coverage
+        run: mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean package -Drevision=$(git describe --tags --always)
+      - name: Start Kafka and Localstack
+        working-directory: e2e
+        run: docker-compose -f docker_compose.yaml up -d --quiet-pull
+      - name: Wait for Kafka Connect REST API
+        run: curl --retry 10 --retry-delay 5 --retry-all-errors http://localhost:8083/connectors\?expand=status\&expand=info
+      - name: Deploy EventBridge Connector
+        working-directory: e2e
+        run: curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @connect-config-json.json
+      - name: Create Localstack AWS Resources
+        run: |
+          aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name ${KAFKA_TOPIC}
+          aws --endpoint-url=http://localhost:4566 events put-rule --name ${KAFKA_TOPIC} --event-pattern "{\"source\":[{\"prefix\":\"kafka-connect\"}]}"
+          aws --endpoint-url=http://localhost:4566 events put-targets --rule ${KAFKA_TOPIC} --targets "Id"="1","Arn"="arn:aws:sqs:us-east-1:000000000000:${KAFKA_TOPIC}"
+      - name: Send Event to Kafka
+        run: |
+          docker run --rm --network e2e_default --env "BROKERS=kafka:29092" deviceinsight/kafkactl:v3.1.0 produce ${KAFKA_TOPIC} --key=my-key --value="{\"sentTime\":\"$(date)\"}"
+          # give cluster some time to process the message before turning it off
+          sleep 5
+      - name: Query Task State
+        run: |
+          # Naive assertion for now until we have real E2E tests
+          TASK_STATE=$(curl --fail-with-body -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/eventbridge-e2e/status | jq -r '.tasks[0].state')
+          if [[ ${TASK_STATE} != "RUNNING" ]]; then 
+            echo "::error::Expected task state to not be \"${TASK_STATE}\""
+          fi
+      - name: Dump logs
+        if: always()
+        run: docker-compose -f e2e/docker_compose.yaml logs 
+
