@@ -54,6 +54,7 @@ public class TransactionAnalyzer {
         var topicCreator = new TransactionAnalyzerTopicCreator(properties);
         topicCreator.createTopic(notificationsTopic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
         topicCreator.createTopic(sourceTopic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
+        topicCreator.close();
 
         StreamsBuilder builder = new StreamsBuilder();
         final KStream<String, GenericRecord> events = builder.stream(sourceTopic);
