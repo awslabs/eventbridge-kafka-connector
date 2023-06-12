@@ -23,10 +23,10 @@ import java.util.concurrent.TimeoutException;
 public class TransactionAnalyzerTopicCreator {
     private final Logger log = LoggerFactory.getLogger(TransactionAnalyzerTopicCreator.class);
 
-    private final Properties properties;
+    private final Admin admin;
 
     public TransactionAnalyzerTopicCreator(Properties properties) {
-        this.properties = properties;
+        this.admin = Admin.create(properties);
     }
 
     /**
@@ -39,9 +39,7 @@ public class TransactionAnalyzerTopicCreator {
         if (System.getenv().getOrDefault("DEV", null) != null) {
             replicationFactor = 1;
         }
-        var admin = Admin.create(properties);
         var newTopic = new NewTopic(topicName, partitionCount, replicationFactor);
-
         try {
             var result = admin.createTopics(Collections.singleton(newTopic));
             result.all().get(30, TimeUnit.SECONDS);
@@ -53,6 +51,9 @@ public class TransactionAnalyzerTopicCreator {
                 log.error("Topic create failed with: " + e);
             }
         }
+
+    }
+    public void close () {
         admin.close();
     }
 
