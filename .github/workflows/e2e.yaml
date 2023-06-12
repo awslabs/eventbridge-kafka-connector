@@ -22,6 +22,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
+      fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:
@@ -46,7 +47,10 @@ jobs:
         run: curl --retry 10 --retry-delay 5 --retry-all-errors http://localhost:8083/connectors\?expand=status\&expand=info
       - name: Deploy EventBridge Connector
         working-directory: e2e
-        run: curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @connect-config-json.json
+        run: |
+          # connect status seems flaky, wait a bit before registering
+          sleep 3
+          curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @connect-config-json.json
       - name: Create Localstack AWS Resources
         run: |
           aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name ${KAFKA_TOPIC}
