@@ -1,28 +1,39 @@
-#  /*
-#   * // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
-#   * // SPDX-License-Identifier: Apache-2.0
-#   */
 #
+#  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#  SPDX-License-Identifier: Apache-2.0
+#
+#
+
 import requests
 import boto3
+import logging
 from smart_open import open
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 client = boto3.client('kafkaconnect')
 s3 = boto3.resource('s3')
 
 def on_event(event, context):
 
-    print(event)
+    logger.info(event)
     request_type = event['RequestType']
-    if request_type == 'Create': return on_create(event)
-    if request_type == 'Update': return on_update(event)
-    if request_type == 'Delete': return on_delete(event)
+    match request_type:
+        case 'Create':
+            return on_create(event)
+        case 'Update':
+            return on_update(event)
+        case 'Delete':
+            return on_delete(event)
+        case _:
+            logger.error(f'Unexpected RequestType: {event["RequestType"]}')
 
     return
 
 def on_create(event):
     props = event["ResourceProperties"]
-    print("create new resource with props %s" % props)
+    logger.info("create new resource with props %s" % props)
 
     URL = props['url'] + props['key']
 
@@ -41,6 +52,7 @@ def on_create(event):
     }
 
 def on_update(event):
+    # Updating the plugin jar is not supported in this custom resource
     pass
 
 def on_delete(event):
