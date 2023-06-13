@@ -64,7 +64,7 @@ public class TransactionAnalyzer {
                 .map((userId, value) -> {
                     var notification = createNotificationRecord(userId, value, notificationSchema);
                     //As this is synthetic test data we can log any value as it does not contain PII
-                    log.info("Detected suspicious transaction. Sending notification to topic. UserId: {} Value: {}", userId, value.get("total").toString());
+                    log.info("Detected suspicious transaction. Sending notification to topic {}. UserId: {} Value: {}", notificationsTopic, userId, value.get("total").toString());
                     return KeyValue.pair(UUID.randomUUID().toString(), notification);
                 })
                 .to(notificationsTopic);
