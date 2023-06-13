@@ -22,9 +22,10 @@ To learn more about those components please read the blog on the [AWS Big Data B
 
 ## Deployment
 
-There are 2 deployment options for the CDK stack:
+There are 2 deployment options for the CDK stack. Please choose the FULL method if you don't want to set up the connector
+manually as described in the blog linked above. 
 
-To deploy everything mentioned above, inlcuding the Connector itself please run the following command in this directory:
+To deploy everything mentioned above, including the Connector itself please run the following command in this directory:
 ```shell
 cdk deploy --context deploymentMode=FULL
 ```
