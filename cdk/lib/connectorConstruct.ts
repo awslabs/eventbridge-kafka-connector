@@ -42,7 +42,7 @@ export class Connector extends Construct {
         })
 
         const pluginDownloadEventHandler = new lambda_python.PythonFunction(this, 'pluginDownloadEventHandler', {
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_10,
             entry: path.join(__dirname, '../customResources/connectorPluginDownload'),
             handler: 'on_event',
             timeout: Duration.seconds(60),
@@ -67,7 +67,7 @@ export class Connector extends Construct {
         })
 
         const pluginCreationEventHandler = new lambda_python.PythonFunction(this, 'pluginCreationEventHandler', {
-            runtime: lambda.Runtime.PYTHON_3_9,
+            runtime: lambda.Runtime.PYTHON_3_10,
             entry: path.join(__dirname, '../customResources/connectorPlugin'),
             handler: 'on_event',
             timeout: Duration.minutes(14)

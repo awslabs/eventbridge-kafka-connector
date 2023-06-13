@@ -6,23 +6,33 @@
 
 import boto3
 import time
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 client = boto3.client('kafkaconnect')
 
 
 def on_event(event, context):
-    print(event)
+    logger.info(event)
     request_type = event['RequestType']
-    if request_type == 'Create': return on_create(event)
-    if request_type == 'Update': return on_update(event)
-    if request_type == 'Delete': return on_delete(event)
+    match request_type:
+        case 'Create':
+            return on_create(event)
+        case 'Update':
+            return on_update(event)
+        case 'Delete':
+            return on_delete(event)
+        case _:
+            logger.error(f'Unexpected RequestType: {event["RequestType"]}')
 
     return
 
 
 def on_create(event):
     props = event["ResourceProperties"]
-    print("create new resource with props %s" % props)
+    logger.info("create new resource with props %s" % props)
 
     response = client.create_custom_plugin(
         contentType=props['contentType'],
@@ -48,12 +58,13 @@ def on_create(event):
 
 
 def on_update(event):
+    # Updating a connector plugin is not supported in this custom resource
     pass
 
 
 def on_delete(event):
     physical_id = event["PhysicalResourceId"]
-    print("delete resource with physical id %s" % physical_id)
+    logger.info("delete resource with physical id %s" % physical_id)
     connector_active = True
     while connector_active:
         try:
@@ -62,4 +73,4 @@ def on_delete(event):
             )
             connector_active = False
         except:
-            time.sleep(10000)
+            time.sleep(10000) #Wait for 10 seconds to check again if connector is still active
