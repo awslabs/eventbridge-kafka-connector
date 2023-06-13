@@ -33,7 +33,7 @@
         <org.jacoco.version>0.8.10</org.jacoco.version>
         <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
         <org.mockito.version>5.3.1</org.mockito.version>
-        <org.slf4j.version>1.7.36</org.slf4j.version>
+        <org.slf4j.version>2.0.7</org.slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
