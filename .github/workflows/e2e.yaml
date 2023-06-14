@@ -31,6 +31,7 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       KAFKA_TOPIC: eventbridge-e2e
       BOOTSTRAP_SERVER: kafka:29092
+      EVENT: '"{\"testMessage\":\"eventbridge-e2e\"}"'
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
       - name: Set up JDK ${{ matrix.java }}
@@ -55,19 +56,31 @@ jobs:
       - name: Create Localstack AWS Resources
         run: |
           aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name ${KAFKA_TOPIC}
-          aws --endpoint-url=http://localhost:4566 events put-rule --name ${KAFKA_TOPIC} --event-pattern "{\"source\":[{\"prefix\":\"kafka-connect\"}]}"
-          aws --endpoint-url=http://localhost:4566 events put-targets --rule ${KAFKA_TOPIC} --targets "Id"="1","Arn"="arn:aws:sqs:us-east-1:000000000000:${KAFKA_TOPIC}"
+          aws --endpoint-url=http://localhost:4566 events create-event-bus --name ${KAFKA_TOPIC}
+          aws --endpoint-url=http://localhost:4566 events put-rule --name ${KAFKA_TOPIC} --event-pattern "{\"source\":[{\"prefix\":\"kafka-connect\"}]}" --event-bus-name ${KAFKA_TOPIC}
+          aws --endpoint-url=http://localhost:4566 events put-targets --rule ${KAFKA_TOPIC} --targets "Id"="1","Arn"="arn:aws:sqs:us-east-1:000000000000:${KAFKA_TOPIC}" --event-bus-name ${KAFKA_TOPIC}
       - name: Send an Event to Kafka
         run: |
-          docker exec -e KAFKA_TOPIC=${KAFKA_TOPIC} -e BOOTSTRAP_SERVER=${BOOTSTRAP_SERVER} kafka-e2e /bin/bash -c 'echo -n {\"testEventSentTime\":\"$(date)\"} | /opt/bitnami/kafka/bin/kafka-console-producer.sh --bootstrap-server ${BOOTSTRAP_SERVER} --topic ${KAFKA_TOPIC}'
+          echo "Sending event: ${EVENT}"
+          docker exec -e EVENT=${EVENT} -e KAFKA_TOPIC=${KAFKA_TOPIC} -e BOOTSTRAP_SERVER=${BOOTSTRAP_SERVER} kafka-e2e /bin/bash -c 'echo -n ${EVENT} | /opt/bitnami/kafka/bin/kafka-console-producer.sh --bootstrap-server ${BOOTSTRAP_SERVER} --topic ${KAFKA_TOPIC}'
+      - name: Wait 5 Seconds
+        run: |
           # give cluster some time to process the message before turning it off
           sleep 5
       - name: Query Task State
         run: |
-          # Naive assertion for now until we have real E2E tests
           TASK_STATE=$(curl --fail-with-body -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/eventbridge-e2e/status | jq -r '.tasks[0].state')
           if [[ ${TASK_STATE} != "RUNNING" ]]; then 
             echo "::error::Expected task state to not be \"${TASK_STATE}\""
+            exit 1
+          fi
+      - name: Receive Event from SQS
+        run: |
+          # Naive assertion for now until we have real E2E tests
+          GOT_EVENT=$(aws --output=json --endpoint-url=http://localhost:4566 sqs receive-message --queue-url http://localhost:4566/000000000000/${KAFKA_TOPIC} | jq -r '.Messages[0].Body|fromjson|.detail.value|tojson')
+          if [[ ${EVENT} != ${GOT_EVENT} ]]; then 
+            echo "::error::Expected event: ${EVENT} got: ${GOT_EVENT}"
+            exit 1
           fi
       - name: Dump logs
         if: always()
