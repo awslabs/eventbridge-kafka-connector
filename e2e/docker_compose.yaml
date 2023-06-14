@@ -1,7 +1,13 @@
 version: "3"
 
+networks:
+  e2e:
+    name: e2e
 services:
   kafka:
+    container_name: kafka-e2e
+    networks:
+      - e2e
     image: docker.io/bitnami/kafka:3.4
     ports:
       - 9092:9092
@@ -21,6 +27,9 @@ services:
     volumes:
       - ${PWD}/log4j.properties:/opt/bitnami/kafka/config/log4j.properties
   connect:
+    container_name: connect-e2e
+    networks:
+      - e2e
     image: docker.io/bitnami/kafka:3.4
     depends_on:
       - kafka
@@ -29,12 +38,16 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
     volumes:
       - ${PWD}/connect-standalone.properties:/opt/bitnami/kafka/config/connect-standalone.properties
       - ${PWD}/connect-log4j.properties:/opt/bitnami/kafka/config/connect-log4j.properties
       - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
     command: /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties
   localstack:
+    container_name: localstack-e2e
+    networks:
+      - e2e
     image: localstack/localstack:2.1
     ports:
       - "127.0.0.1:4566:4566" # LocalStack Gateway
