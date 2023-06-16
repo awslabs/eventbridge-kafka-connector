@@ -31,6 +31,7 @@ jobs:
       AWS_DEFAULT_REGION: us-east-1
       KAFKA_TOPIC: eventbridge-e2e
       BOOTSTRAP_SERVER: kafka:29092
+      EVENT: '"{\"testMessage\":\"eventbridge-e2e\"}"'
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
       - name: Set up JDK ${{ matrix.java }}
@@ -39,37 +40,5 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.java }}
           cache: "maven"
-      - name: Build JAR Artifacts and verify coverage
-        run: mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean package -Drevision=$(git describe --tags --always)
-      - name: Start Kafka and Localstack
-        working-directory: e2e
-        run: docker-compose -f docker_compose.yaml up -d --quiet-pull
-      - name: Wait for Kafka Connect REST API
-        run: curl --retry 10 --retry-delay 5 --retry-all-errors http://localhost:8083/connectors\?expand=status\&expand=info
-      - name: Deploy EventBridge Connector
-        working-directory: e2e
-        run: |
-          # connect status seems flaky, wait a bit before registering
-          sleep 3
-          curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @connect-config-json.json
-      - name: Create Localstack AWS Resources
-        run: |
-          aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name ${KAFKA_TOPIC}
-          aws --endpoint-url=http://localhost:4566 events put-rule --name ${KAFKA_TOPIC} --event-pattern "{\"source\":[{\"prefix\":\"kafka-connect\"}]}"
-          aws --endpoint-url=http://localhost:4566 events put-targets --rule ${KAFKA_TOPIC} --targets "Id"="1","Arn"="arn:aws:sqs:us-east-1:000000000000:${KAFKA_TOPIC}"
-      - name: Send an Event to Kafka
-        run: |
-          docker exec -e KAFKA_TOPIC=${KAFKA_TOPIC} -e BOOTSTRAP_SERVER=${BOOTSTRAP_SERVER} kafka-e2e /bin/bash -c 'echo -n {\"testEventSentTime\":\"$(date)\"} | /opt/bitnami/kafka/bin/kafka-console-producer.sh --bootstrap-server ${BOOTSTRAP_SERVER} --topic ${KAFKA_TOPIC}'
-          # give cluster some time to process the message before turning it off
-          sleep 5
-      - name: Query Task State
-        run: |
-          # Naive assertion for now until we have real E2E tests
-          TASK_STATE=$(curl --fail-with-body -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/eventbridge-e2e/status | jq -r '.tasks[0].state')
-          if [[ ${TASK_STATE} != "RUNNING" ]]; then 
-            echo "::error::Expected task state to not be \"${TASK_STATE}\""
-          fi
-      - name: Dump logs
-        if: always()
-        run: docker-compose -f e2e/docker_compose.yaml logs 
-
+      - name: Run E2E Tests
+        run: mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)

@@ -5,8 +5,8 @@
     SPDX-License-Identifier: Apache-2.0
 
 -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>software.amazon.msk</groupId>
     <artifactId>kafka-eventbridge-sink</artifactId>
@@ -28,12 +28,13 @@
         <connect.api.version>3.4.1</connect.api.version>
         <joda-time.version>2.12.5</joda-time.version>
         <org.apache.commons.version>3.12.0</org.apache.commons.version>
-        <org.apache.logging.log4j.version>2.20.0</org.apache.logging.log4j.version>
+        <org.awaitility.version>4.2.0</org.awaitility.version>
         <org.hamcrest.version>2.2</org.hamcrest.version>
         <org.jacoco.version>0.8.10</org.jacoco.version>
         <org.junit.jupiter.version>5.9.3</org.junit.jupiter.version>
         <org.mockito.version>5.3.1</org.mockito.version>
         <org.slf4j.version>2.0.7</org.slf4j.version>
+        <org.testcontainers.version>1.18.3</org.testcontainers.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -49,19 +50,16 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>connect-json</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -85,6 +83,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>aws-crt-client</artifactId>
         </dependency>
@@ -105,6 +113,11 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>http-client-spi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -150,29 +163,21 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>connect-api</artifactId>
                 <version>${connect.api.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>connect-json</artifactId>
                 <version>${connect.api.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${connect.api.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${org.apache.logging.log4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-slf4j-impl</artifactId>
-                <version>${org.apache.logging.log4j.version}</version>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>${org.awaitility.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hamcrest</groupId>
@@ -202,6 +207,16 @@
                 <version>${org.slf4j.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>${org.slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${org.testcontainers.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
                 <version>${aws.java.sdk.version}</version>
@@ -221,7 +236,6 @@
                 <configuration>
                     <licenseSets>
                         <licenseSet>
-                            <header>./NOTICE</header>
                             <excludes>
                                 <exclude>**/README</exclude>
                                 <exclude>**/NOTICE</exclude>
@@ -231,6 +245,7 @@
                                 <exclude>src/test/resources/**</exclude>
                                 <exclude>src/main/resources/**</exclude>
                             </excludes>
+                            <header>./NOTICE</header>
                         </licenseSet>
                     </licenseSets>
                 </configuration>
@@ -243,6 +258,19 @@
                     <execution>
                         <goals>
                             <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.1.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -263,7 +291,8 @@
                             <finalName>${project.artifactId}-with-dependencies</finalName>
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>software.amazon.event.kafkaconnector.EventBridgeSinkConnector</mainClass>
                                 </transformer>
                             </transformers>
@@ -286,24 +315,6 @@
                 <version>${org.jacoco.version}</version>
                 <executions>
                     <execution>
-                        <id>prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>default-check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>package</phase>
                         <configuration>
                             <!-- TODO (@embano1): enforce coverage -->
                             <haltOnFailure>false</haltOnFailure>
@@ -316,13 +327,31 @@
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
                                             <minimum>50%</minimum>
+                                            <value>COVEREDRATIO</value>
                                         </limit>
                                     </limits>
                                 </rule>
                             </rules>
                         </configuration>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <id>default-check</id>
+                        <phase>package</phase>
+                    </execution>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <id>prepare-agent</id>
+                    </execution>
+                    <execution>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <id>report</id>
+                        <phase>test</phase>
                     </execution>
                 </executions>
             </plugin>
