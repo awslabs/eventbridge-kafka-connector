@@ -1,16 +1,10 @@
 version: "3"
 
-networks:
-  e2e:
-    name: e2e
 services:
   kafka:
-    container_name: kafka-e2e
-    networks:
-      - e2e
     image: docker.io/bitnami/kafka:3.4
     ports:
-      - 9092:9092
+      - "9092:9092"
     environment:
       ALLOW_PLAINTEXT_LISTENER: 'yes'
       KAFKA_ENABLE_KRAFT: 'true'
@@ -27,14 +21,11 @@ services:
     volumes:
       - ${PWD}/log4j.properties:/opt/bitnami/kafka/config/log4j.properties
   connect:
-    container_name: connect-e2e
-    networks:
-      - e2e
     image: docker.io/bitnami/kafka:3.4
     depends_on:
       - kafka
     ports:
-      - 8083:8083
+      - "8083:8083"
     environment:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
@@ -45,13 +36,10 @@ services:
       - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
     command: /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties
   localstack:
-    container_name: localstack-e2e
-    networks:
-      - e2e
-    image: localstack/localstack:2.1
+    image: localstack/localstack:latest
     ports:
-      - "127.0.0.1:4566:4566" # LocalStack Gateway
-      - "127.0.0.1:4510-4559:4510-4559" # external services port range
+      - "4566:4566" # LocalStack Gateway
+      - "4510-4559:4510-4559" # external services port range
     environment:
       - DEBUG=1
       - DOCKER_HOST=unix:///var/run/docker.sock
