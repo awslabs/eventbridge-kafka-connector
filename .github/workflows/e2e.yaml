@@ -22,6 +22,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
+        kafka: ["3.4.0","3.4.1"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -30,6 +31,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: test
       AWS_DEFAULT_REGION: us-east-1
       KAFKA_TOPIC: eventbridge-e2e
+      KAFKA_VERSION: ${{ matrix.kafka }}
       BOOTSTRAP_SERVER: kafka:29092
       EVENT: '"{\"testMessage\":\"eventbridge-e2e\"}"'
     steps:
@@ -40,5 +42,5 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.java }}
           cache: "maven"
-      - name: Run E2E Tests
+      - name: Run Kafka ${{ matrix.kafka }} E2E Tests
         run: mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)
