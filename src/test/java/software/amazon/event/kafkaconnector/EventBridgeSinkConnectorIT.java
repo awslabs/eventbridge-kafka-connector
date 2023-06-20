@@ -72,9 +72,18 @@ public class EventBridgeSinkConnectorIT {
   private DockerComposeContainer environment;
   private SqsClient sqsClient;
   private EventBridgeClient ebClient;
+  private String KafkaVersion;
 
   @BeforeAll
   public void setup() {
+    //    get environment variable KAFKA_VERSION assert it is not null or fail("KAFKA_VERSION
+    // environment variable is not set");
+
+    KafkaVersion = System.getenv("KAFKA_VERSION");
+    if (KafkaVersion == null || KafkaVersion.isEmpty()) {
+      fail("KAFKA_VERSION environment variable must be set");
+    }
+
     startDockerComposeEnvironment();
     createAwsResources();
   }
@@ -85,17 +94,22 @@ public class EventBridgeSinkConnectorIT {
   }
 
   private void startDockerComposeEnvironment() {
-    log.info("starting docker compose environment");
-    environment =
-        new DockerComposeContainer("e2e", COMPOSE_FILE_LOCATION)
-            .withLogConsumer("connect", new Slf4jLogConsumer(log).withSeparateOutputStreams())
-            .withEnv("AWS_ACCESS_KEY_ID", "test")
-            .withEnv("AWS_SECRET_ACCESS_KEY", "test")
-            .withExposedService("connect_1", 8083)
-            .withExposedService("localstack_1", 4566)
-            .waitingFor("connect_1", new HttpWaitStrategy().forPort(8083))
-            .waitingFor("localstack_1", new HttpWaitStrategy().forPort(4566));
-    environment.start();
+    log.info("starting docker compose environment with kafka version {}", KafkaVersion);
+    try {
+      environment =
+          new DockerComposeContainer("e2e", COMPOSE_FILE_LOCATION)
+              .withLogConsumer("connect", new Slf4jLogConsumer(log).withSeparateOutputStreams())
+              .withEnv("AWS_ACCESS_KEY_ID", "test")
+              .withEnv("AWS_SECRET_ACCESS_KEY", "test")
+              .withEnv("KAFKA_VERSION", KafkaVersion)
+              .withExposedService("connect_1", 8083)
+              .withExposedService("localstack_1", 4566)
+              .waitingFor("connect_1", new HttpWaitStrategy().forPort(8083))
+              .waitingFor("localstack_1", new HttpWaitStrategy().forPort(4566));
+      environment.start();
+    } catch (Exception e) {
+      fail("failed to run docker compose environment: " + e.getMessage());
+    }
   }
 
   private void createAwsResources() {
