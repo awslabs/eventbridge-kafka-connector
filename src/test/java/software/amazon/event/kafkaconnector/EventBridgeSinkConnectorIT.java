@@ -48,41 +48,49 @@ import software.amazon.awssdk.utils.ImmutableMap;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EventBridgeSinkConnectorIT {
+  //  environment variables
+  private static final String COMPOSE_FILE_ENV = "COMPOSE_FILE";
+  private static final String KAFKA_VERSION_ENV = "KAFKA_VERSION";
+
   // (@embano1): hardcoding ports here is a bit of a hack, but it's the easiest way to
   // allow direct invocation of docker-compose with fixed ports
-  public static final String BOOTSTRAP_SERVER = "localhost:9092";
   private static final URI LOCALSTACK_ENDPOINT = URI.create("http://localhost:4566");
-
+  private static final String BOOTSTRAP_SERVER = "localhost:9092";
   private static final String RUNNING_STATE = "RUNNING";
-  private static final File COMPOSE_FILE_LOCATION = new File("e2e/docker_compose.yaml");
   private static final String CONNECTOR_CONFIG_LOCATION = "e2e/connect-config-json.json";
 
   private static final String TEST_RESOURCE_NAME = "eventbridge-e2e";
   private static final String TEST_EVENT_KEY = "eventbridge-e2e";
 
   private final Logger log = LoggerFactory.getLogger(EventBridgeSinkConnectorIT.class);
-  private final HttpClient httpClient =
-      HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
-  private final ObjectNode TestEvent =
-      new ObjectMapper()
-          .createObjectNode()
-          .put("sentTimestamp", LocalDateTime.now().toString())
-          .put("message", "hello from kafka");
 
   private DockerComposeContainer environment;
   private SqsClient sqsClient;
-  private EventBridgeClient ebClient;
   private String KafkaVersion;
+  private File ComposeFile;
+  private ObjectNode TestEvent;
+  private HttpClient HttpClient;
 
   @BeforeAll
   public void setup() {
-    //    get environment variable KAFKA_VERSION assert it is not null or fail("KAFKA_VERSION
-    // environment variable is not set");
-
-    KafkaVersion = System.getenv("KAFKA_VERSION");
+    KafkaVersion = System.getenv(KAFKA_VERSION_ENV);
     if (KafkaVersion == null || KafkaVersion.isEmpty()) {
-      fail("KAFKA_VERSION environment variable must be set");
+      fail(KAFKA_VERSION_ENV + " environment variable must be set");
     }
+
+    var ComposeFileLocation = System.getenv(COMPOSE_FILE_ENV);
+    if (ComposeFileLocation == null || ComposeFileLocation.isEmpty()) {
+      fail(COMPOSE_FILE_ENV + " environment variable must be set");
+    }
+
+    ComposeFile = new File(ComposeFileLocation);
+    HttpClient =
+        java.net.http.HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
+    TestEvent =
+        new ObjectMapper()
+            .createObjectNode()
+            .put("sentTimestamp", LocalDateTime.now().toString())
+            .put("message", "hello from kafka");
 
     startDockerComposeEnvironment();
     createAwsResources();
@@ -94,14 +102,17 @@ public class EventBridgeSinkConnectorIT {
   }
 
   private void startDockerComposeEnvironment() {
-    log.info("starting docker compose environment with kafka version {}", KafkaVersion);
+    log.info(
+        "starting docker compose environment: kafka_version={} docker_compose_file={}",
+        KafkaVersion,
+        ComposeFile.toString());
     try {
       environment =
-          new DockerComposeContainer("e2e", COMPOSE_FILE_LOCATION)
+          new DockerComposeContainer("e2e", ComposeFile)
               .withLogConsumer("connect", new Slf4jLogConsumer(log).withSeparateOutputStreams())
               .withEnv("AWS_ACCESS_KEY_ID", "test")
               .withEnv("AWS_SECRET_ACCESS_KEY", "test")
-              .withEnv("KAFKA_VERSION", KafkaVersion)
+              .withEnv(KAFKA_VERSION_ENV, KafkaVersion)
               .withExposedService("connect_1", 8083)
               .withExposedService("localstack_1", 4566)
               .waitingFor("connect_1", new HttpWaitStrategy().forPort(8083))
@@ -123,7 +134,7 @@ public class EventBridgeSinkConnectorIT {
             .region(Region.US_EAST_1)
             .build();
 
-    ebClient =
+    var ebClient =
         EventBridgeClient.builder()
             .endpointOverride(LOCALSTACK_ENDPOINT)
             .credentialsProvider(credentials)
@@ -176,7 +187,7 @@ public class EventBridgeSinkConnectorIT {
               .setHeader("Content-Type", "application/json")
               .build();
 
-      var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      var response = HttpClient.send(request, HttpResponse.BodyHandlers.ofString());
       log.info("kafka connect response {}", response);
 
       var statusCode = response.statusCode();
@@ -196,7 +207,7 @@ public class EventBridgeSinkConnectorIT {
                       .setHeader("Accept", "application/json")
                       .build();
 
-              var response = httpClient.send(statusRequest, HttpResponse.BodyHandlers.ofString());
+              var response = HttpClient.send(statusRequest, HttpResponse.BodyHandlers.ofString());
               return response.body().contains(RUNNING_STATE);
             });
     log.info("eventbridge sink connector entered {} state", RUNNING_STATE);

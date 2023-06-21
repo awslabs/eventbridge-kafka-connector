@@ -1,0 +1,44 @@
+version: "3"
+
+services:
+  # is redpanda: reusing names to not break kafka integration tests
+  kafka:
+    command:
+      - redpanda
+      - start
+      - --kafka-addr internal://0.0.0.0:29092,external://0.0.0.0:9092
+      - --advertise-kafka-addr internal://kafka:29092,external://localhost:9092
+      - --rpc-addr kafka:33145
+      - --advertise-rpc-addr kafka:33145
+      - --smp 1
+      - --memory 1G
+      - --mode dev-container
+      # - --default-log-level=debug
+    image: docker.redpanda.com/redpandadata/redpanda:v23.1.12
+    ports:
+      - "9092:9092"
+  connect:
+    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.4.1}
+    depends_on:
+      - kafka
+    ports:
+      - "8083:8083"
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+    volumes:
+      - ${PWD}/connect-standalone.properties:/opt/bitnami/kafka/config/connect-standalone.properties
+      - ${PWD}/connect-log4j.properties:/opt/bitnami/kafka/config/connect-log4j.properties
+      - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
+    command: ["/bin/bash","-c","env && /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties"]
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566" # LocalStack Gateway
+      - "4510-4559:4510-4559" # external services port range
+    environment:
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
