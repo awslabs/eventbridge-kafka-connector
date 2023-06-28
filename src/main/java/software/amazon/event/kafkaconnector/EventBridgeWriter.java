@@ -40,8 +40,8 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.utils.StringUtils;
 import software.amazon.event.kafkaconnector.auth.EventBridgeCredentialsProvider;
+import software.amazon.event.kafkaconnector.batch.DefaultEventBridgeBatching;
 import software.amazon.event.kafkaconnector.batch.EventBridgeBatchingStrategy;
-import software.amazon.event.kafkaconnector.batch.SingletonEventBridgeBatching;
 import software.amazon.event.kafkaconnector.mapping.DefaultEventBridgeMapper;
 import software.amazon.event.kafkaconnector.mapping.EventBridgeMapper;
 import software.amazon.event.kafkaconnector.util.EventBridgeEventId;
@@ -97,7 +97,7 @@ public class EventBridgeWriter {
     this.ebClient = client;
 
     this.eventBridgeMapper = new DefaultEventBridgeMapper(config);
-    this.batching = new SingletonEventBridgeBatching();
+    this.batching = new DefaultEventBridgeBatching();
     log.trace(
         "EventBridgeWriter client config: {}",
         ReflectionToStringBuilder.toString(
@@ -114,7 +114,7 @@ public class EventBridgeWriter {
     this.config = config;
     this.ebClient = ebClient;
     this.eventBridgeMapper = new DefaultEventBridgeMapper(config);
-    this.batching = new SingletonEventBridgeBatching();
+    this.batching = new DefaultEventBridgeBatching();
   }
 
   /**

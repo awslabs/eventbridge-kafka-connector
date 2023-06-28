@@ -5,20 +5,19 @@
 package software.amazon.event.kafkaconnector;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.rangeClosed;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static software.amazon.event.kafkaconnector.TestUtils.*;
 
-import java.util.List;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.sink.SinkRecord;
+import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +34,15 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 @ExtendWith(MockitoExtension.class)
 public class EventBridgeWriterTest {
 
+  private final EventBridgeSinkConfig config =
+      new EventBridgeSinkConfig(
+          Map.of(
+              "aws.eventbridge.retries.max", 10,
+              "aws.eventbridge.connector.id", "someId",
+              "aws.eventbridge.region", "eu-central-1",
+              "aws.eventbridge.eventbus.arn", "something",
+              "aws.eventbridge.detail.types", "my-first-${topic}"));
+
   @Mock private EventBridgeAsyncClient eventBridgeAsyncClient;
   @Captor private ArgumentCaptor<PutEventsRequest> putEventsArgumentCaptor;
 
@@ -45,24 +53,25 @@ public class EventBridgeWriterTest {
 
   @Test
   public void returnsNoFailedRecords() {
+    var firstResponse =
+        PutEventsResponse.builder()
+            .failedEntryCount(0)
+            .entries(OfPutEventsResultEntry.withIdsIn(rangeClosed(1, 10)))
+            .build();
+    var secondResponse =
+        PutEventsResponse.builder()
+            .failedEntryCount(0)
+            .entries(OfPutEventsResultEntry.withIdsIn(rangeClosed(11, 15)))
+            .build();
+
     when(eventBridgeAsyncClient.putEvents(any(PutEventsRequest.class)))
-        .thenReturn(
-            completedFuture(
-                PutEventsResponse.builder()
-                    .failedEntryCount(0)
-                    .entries(PutEventsResultEntry.builder().eventId("eventId:1").build())
-                    .build()))
-        .thenReturn(
-            completedFuture(
-                PutEventsResponse.builder()
-                    .failedEntryCount(0)
-                    .entries(PutEventsResultEntry.builder().eventId("eventId:2").build())
-                    .build()));
+        .thenReturn(completedFuture(firstResponse))
+        .thenReturn(completedFuture(secondResponse));
 
-    var writer = new EventBridgeWriter(eventBridgeAsyncClient, mock(EventBridgeSinkConfig.class));
-    var result = writer.putItems(List.of(createTestRecord(), createTestRecord()));
+    var writer = new EventBridgeWriter(eventBridgeAsyncClient, config);
+    var result = writer.putItems(OfSinkRecord.withIdsIn(rangeClosed(1, 15)));
 
-    assertThat(result).filteredOn(EventBridgeResult::isSuccess).hasSize(2);
+    assertThat(result).filteredOn(EventBridgeResult::isSuccess).hasSize(15);
     assertThat(result).filteredOn(EventBridgeResult::isFailure).isEmpty();
 
     verify(eventBridgeAsyncClient, times(2)).putEvents(putEventsArgumentCaptor.capture());
@@ -75,16 +84,16 @@ public class EventBridgeWriterTest {
     when(eventBridgeAsyncClient.putEvents(any(PutEventsRequest.class)))
         .thenThrow(EventBridgeException.class);
 
-    var myWriter = new EventBridgeWriter(eventBridgeAsyncClient, mock(EventBridgeSinkConfig.class));
+    var myWriter = new EventBridgeWriter(eventBridgeAsyncClient, config);
 
-    var result = myWriter.putItems(List.of(createTestRecord()));
+    var result = myWriter.putItems(OfSinkRecord.withIdsIn(rangeClosed(1, 10)));
 
     assertThat(result)
-        .hasSize(1)
         .filteredOn(EventBridgeResult::isFailure)
         .map(EventBridgeResult::failure)
         .extracting(it -> it.getValue().getType())
-        .containsExactly(EventBridgeResult.ErrorType.RETRY);
+        .containsExactlyElementsOf(
+            Stream.generate(() -> EventBridgeResult.ErrorType.RETRY).limit(10).collect(toList()));
 
     verify(eventBridgeAsyncClient).putEvents(any(PutEventsRequest.class));
     verifyNoMoreInteractions(eventBridgeAsyncClient);
@@ -92,28 +101,29 @@ public class EventBridgeWriterTest {
 
   @Test
   public void populatesPartialErrors() {
+    var firstResponse =
+        PutEventsResponse.builder()
+            .failedEntryCount(0)
+            .entries(OfPutEventsResultEntry.withIdsIn(rangeClosed(1, 10)))
+            .build();
+
     when(eventBridgeAsyncClient.putEvents(any(PutEventsRequest.class)))
-        .thenReturn(
-            completedFuture(
-                PutEventsResponse.builder()
-                    .failedEntryCount(0)
-                    .entries(PutEventsResultEntry.builder().eventId("eventId:1").build())
-                    .build()))
+        .thenReturn(completedFuture(firstResponse))
         .thenThrow(EventBridgeException.builder().message("Failed").build());
 
-    var myWriter = new EventBridgeWriter(eventBridgeAsyncClient, mock(EventBridgeSinkConfig.class));
-    var result = myWriter.putItems(List.of(createTestRecord(), createTestRecord()));
+    var myWriter = new EventBridgeWriter(eventBridgeAsyncClient, config);
+    var result = myWriter.putItems(OfSinkRecord.withIdsIn(rangeClosed(1, 15)));
 
     assertThat(result)
         .filteredOn(EventBridgeResult::isSuccess)
         .map(EventBridgeResult::success)
-        .hasSize(1);
+        .hasSize(10);
     assertThat(result)
         .filteredOn(EventBridgeResult::isFailure)
         .map(EventBridgeResult::failure)
-        .hasSize(1)
         .extracting(it -> it.getValue().getType())
-        .containsExactly(EventBridgeResult.ErrorType.RETRY);
+        .containsExactlyElementsOf(
+            Stream.generate(() -> EventBridgeResult.ErrorType.RETRY).limit(5).collect(toList()));
 
     verify(eventBridgeAsyncClient, times(2)).putEvents(putEventsArgumentCaptor.capture());
     verifyNoMoreInteractions(eventBridgeAsyncClient);
@@ -122,55 +132,49 @@ public class EventBridgeWriterTest {
 
   @Test
   public void populatesPartialDataException() {
+    var firstResponse =
+        PutEventsResponse.builder()
+            .failedEntryCount(1)
+            .entries(
+                Stream.concat(
+                        OfPutEventsResultEntry.withIdsIn(rangeClosed(1, 9)).stream(),
+                        Stream.of(
+                            PutEventsResultEntry.builder()
+                                .errorCode("errorCode")
+                                .errorMessage("errorMessage")
+                                .build()))
+                    .collect(toList()))
+            .build();
+    var secondResponse =
+        PutEventsResponse.builder()
+            .failedEntryCount(1)
+            .entries(
+                Stream.concat(
+                        Stream.of(
+                            PutEventsResultEntry.builder()
+                                .errorCode("errorCode")
+                                .errorMessage("errorMessage")
+                                .build()),
+                        OfPutEventsResultEntry.withIdsIn(rangeClosed(12, 15)).stream())
+                    .collect(toList()))
+            .build();
+
     when(eventBridgeAsyncClient.putEvents(any(PutEventsRequest.class)))
-        .thenReturn(
-            completedFuture(
-                PutEventsResponse.builder()
-                    .failedEntryCount(0)
-                    .entries(PutEventsResultEntry.builder().eventId("eventId:1").build())
-                    .build()))
-        .thenReturn(
-            completedFuture(
-                PutEventsResponse.builder()
-                    .failedEntryCount(0)
-                    .entries(PutEventsResultEntry.builder().eventId("eventId:2").build())
-                    .build()));
+        .thenReturn(completedFuture(firstResponse))
+        .thenReturn(completedFuture(secondResponse));
 
-    var record = createTestRecord();
-    SinkRecord tombstone =
-        new SinkRecord("topic", 0, Schema.STRING_SCHEMA, "somekey", Schema.STRING_SCHEMA, null, 0);
+    var writer = new EventBridgeWriter(eventBridgeAsyncClient, config);
+    var result = writer.putItems(OfSinkRecord.withIdsIn(rangeClosed(1, 15)));
 
-    var writer = new EventBridgeWriter(eventBridgeAsyncClient, mock(EventBridgeSinkConfig.class));
-    var result = writer.putItems(List.of(record, tombstone));
-
-    assertThat(result).filteredOn(EventBridgeResult::isFailure).isEmpty();
+    assertThat(result)
+        .filteredOn(EventBridgeResult::isFailure)
+        .map(EventBridgeResult::failure)
+        .extracting(
+            it -> String.format("%s|%d", it.getValue().getType(), it.getSinkRecord().kafkaOffset()))
+        .containsExactly("REPORT_ONLY|10", "REPORT_ONLY|11");
 
     verify(eventBridgeAsyncClient, times(2)).putEvents(putEventsArgumentCaptor.capture());
     verifyNoMoreInteractions(eventBridgeAsyncClient);
     assertThat(putEventsArgumentCaptor.getAllValues()).hasSize(2);
-  }
-
-  private SinkRecord createTestRecord() {
-    var valueSchema =
-        SchemaBuilder.struct()
-            .field("id", Schema.STRING_SCHEMA)
-            .field("creditCard", Schema.STRING_SCHEMA)
-            .field("firstName", Schema.STRING_SCHEMA)
-            .field("lastName", Schema.STRING_SCHEMA)
-            .field("streetAddress", Schema.STRING_SCHEMA)
-            .build();
-
-    var value = new Struct(valueSchema);
-    value.put("id", "ah423k1k2");
-    value.put("creditCard", "4111111111111111");
-    value.put("firstName", "John");
-    value.put("lastName", "Doe");
-    value.put("streetAddress", "Main Street 1");
-
-    var record = new SinkRecord("topic", 0, Schema.STRING_SCHEMA, "key", valueSchema, value, 0);
-    record.headers().addString("header_1", "Samwise Gamgee");
-    record.headers().addString("header_2", "Gandalf");
-
-    return record;
   }
 }
