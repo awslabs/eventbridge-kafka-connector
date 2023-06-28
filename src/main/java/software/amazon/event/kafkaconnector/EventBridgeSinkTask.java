@@ -4,24 +4,26 @@
  */
 package software.amazon.event.kafkaconnector;
 
-import com.google.common.collect.Lists;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Stream.empty;
+
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.errors.DataException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.event.kafkaconnector.exceptions.EventBridgePartialFailureResponse;
-import software.amazon.event.kafkaconnector.exceptions.EventBridgeWriterException;
+import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
 import software.amazon.event.kafkaconnector.util.PropertiesUtil;
 import software.amazon.event.kafkaconnector.util.StatusReporter;
 
@@ -37,9 +39,10 @@ public class EventBridgeSinkTask extends SinkTask {
   public void start(Map<String, String> properties) {
     log.info("Starting Kafka Connect task for EventBridgeSinkConnector");
 
-    config = new EventBridgeSinkConfig(properties);
-    eventBridgeWriter = new EventBridgeWriter(config);
+    var config = new EventBridgeSinkConfig(properties);
+    var eventBridgeWriter = new EventBridgeWriter(config);
 
+    ErrantRecordReporter dlq;
     try {
       dlq = context.errantRecordReporter();
     } catch (NoSuchMethodError | NoClassDefFoundError e) {
@@ -48,6 +51,15 @@ public class EventBridgeSinkTask extends SinkTask {
     if (dlq != null) {
       log.info("Dead-letter queue enabled");
     }
+
+    startInternal(config, eventBridgeWriter, dlq);
+  }
+
+  void startInternal(
+      EventBridgeSinkConfig config, EventBridgeWriter eventBridgeWriter, ErrantRecordReporter dlq) {
+    this.config = config;
+    this.eventBridgeWriter = eventBridgeWriter;
+    this.dlq = dlq;
     statusReporter.startAsync();
   }
 
@@ -59,102 +71,91 @@ public class EventBridgeSinkTask extends SinkTask {
       return;
     }
 
-    var eventBridgeWriterRecords =
-        records.stream()
-            .map(this::convertToEventBridgeWriterRecord)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+    var remainingRecords = List.copyOf(records);
 
-    // TODO: disabling batching for now until we can correctly calculate the size of the whole batch
-    // to avoid failing all entries in an EventBridge request due to exceeding 256kb size limit
-    var batches = Lists.partition(eventBridgeWriterRecords, 1);
-
-    var attempts = 0;
+    var attempts = new AtomicInteger(0);
     var start = OffsetDateTime.now(ZoneOffset.UTC);
-    while (true) {
-      attempts++;
+
+    while (!remainingRecords.isEmpty()) {
+      attempts.incrementAndGet();
       log.trace(
-          "EventBridgeSinkTask putItems call started: start={} attempts={} maxRetries={}",
+          "putItems call started: start={} attempts={} maxRetries={}",
           start,
           attempts,
           config.maxRetries);
+
+      remainingRecords =
+          eventBridgeWriter.putItems(remainingRecords).stream()
+              .filter(EventBridgeResult::isFailure)
+              .flatMap(it -> handleFailedEntries(it.failure(), attempts.get()))
+              .collect(toList());
+
+      // only report successful putEvents calls
+      statusReporter.setSentRecords(records.size());
+
       try {
-        batches.stream()
-            .flatMap(batch -> eventBridgeWriter.putItems(batch).stream())
-            .filter(EventBridgeWriterRecord::hasError)
-            .forEach(this::handleFailedEntries);
-        // only report successful putEvents calls
-        statusReporter.setSentRecords(eventBridgeWriterRecords.size());
-      } catch (EventBridgeWriterException e) {
-        switch (e.exceptionType) {
-          case RETRYABLE:
-            handleRetryableError(attempts, e);
-            continue; // retry
-          case NON_RETRYABLE:
-            handleNonRetryableError(e);
-        }
+        // TODO: improve retry delay implementation
+        TimeUnit.MILLISECONDS.sleep(config.retriesDelay);
+      } catch (InterruptedException ie) {
+        throw new ConnectException(ie);
       }
-      var completion = OffsetDateTime.now(ZoneOffset.UTC);
-      log.trace(
-          "EventBridgeSinkTask putItems call completed: start={} completion={} durationMillis={} "
-              + "attempts={} "
-              + "maxRetries={}",
-          start,
-          completion,
-          Duration.between(start, completion).toMillis(),
-          attempts,
-          config.maxRetries);
-      return;
     }
+
+    var completion = OffsetDateTime.now(ZoneOffset.UTC);
+    log.trace(
+        "putItems call completed: start={} completion={} durationMillis={} "
+            + "attempts={} "
+            + "maxRetries={}",
+        start,
+        completion,
+        Duration.between(start, completion).toMillis(),
+        attempts,
+        config.maxRetries);
   }
 
-  private void handleNonRetryableError(EventBridgeWriterException e) {
-    log.error("Non-retryable failed put call: failing connector errorMessage={}", e.getMessage());
-    throw new ConnectException(e);
-  }
+  private Stream<SinkRecord> handleFailedEntries(
+      MappedSinkRecord<EventBridgeResult.Error> errorRecord, Integer attempts) {
 
-  private void handleRetryableError(Integer attempts, EventBridgeWriterException e) {
-    if (attempts > config.maxRetries) {
-      log.error(
-          "Not retrying failed putItems call: reached max retries attempts={} maxRetries={} "
-              + "errorMessage={}",
-          attempts,
-          config.maxRetries,
-          e.getMessage());
-      throw new ConnectException(e);
-    }
+    var error = errorRecord.getValue();
+    var message = error.getMessage();
+    var cause = error.getCause();
+    switch (error.getType()) {
+      case REPORT_ONLY:
+        var failure =
+            new EventBridgePartialFailureResponse(errorRecord.getSinkRecord(), message, cause);
+        if (dlq != null) {
+          log.trace("Sending record to dead-letter queue: {}", errorRecord);
+          dlq.report(errorRecord.getSinkRecord(), failure);
+        } else {
+          log.warn("Dead-letter queue not configured: skipping failed record", failure);
+        }
+        return empty();
 
-    try {
-      log.warn(
-          "Retrying failed putItems call: attempts={} maxRetries={} errorMessage={}",
-          attempts,
-          config.maxRetries,
-          e.getMessage());
-      // TODO: improve retry delay implementation
-      TimeUnit.MILLISECONDS.sleep(config.retriesDelay);
-    } catch (InterruptedException ie) {
-      throw new ConnectException(ie);
-    }
-  }
+      case RETRY:
+        if (attempts > config.maxRetries) {
+          log.error(
+              "Not retrying failed putItems call: reached max retries attempts={} maxRetries={} "
+                  + "errorMessage={}",
+              attempts,
+              config.maxRetries,
+              cause.getMessage());
+          throw new ConnectException(cause);
+        }
 
-  private void handleFailedEntries(EventBridgeWriterRecord record) {
-    var failure = new EventBridgePartialFailureResponse(record);
-    if (dlq != null) {
-      log.trace("Sending record to dead-letter queue: {}", record);
-      dlq.report(record.getSinkRecord(), failure);
-    } else {
-      log.warn("Dead-letter queue not configured: skipping failed record", failure);
-    }
-  }
+        log.warn(
+            "Retrying failed putItems call: attempts={} maxRetries={} errorMessage={}",
+            attempts,
+            config.maxRetries,
+            cause.getMessage());
 
-  private EventBridgeWriterRecord convertToEventBridgeWriterRecord(SinkRecord record) {
-    EventBridgeWriterRecord eventBridgeRecord = null;
-    try {
-      eventBridgeRecord = new EventBridgeWriterRecord(record);
-    } catch (DataException e) {
-      log.error("Invalid record detected: skipping record", e);
+        return Stream.of(errorRecord.getSinkRecord());
+
+      case PANIC:
+        log.error(
+            "Non-retryable failed put call: failing connector errorMessage={}", cause.getMessage());
+        throw new ConnectException(cause);
     }
-    return eventBridgeRecord;
+    return Stream.empty();
   }
 
   @Override
