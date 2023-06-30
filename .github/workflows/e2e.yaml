@@ -22,7 +22,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
-        kafka: ["3.4.0","3.4.1"]
+        kafka: ["3.4.1","3.5.0"]
         broker: ["kafka","redpanda"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
