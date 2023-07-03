@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.File;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -68,7 +67,6 @@ public class EventBridgeSinkConnectorIT {
   private SqsClient sqsClient;
   private String KafkaVersion;
   private File ComposeFile;
-  private ObjectNode TestEvent;
   private HttpClient HttpClient;
 
   @BeforeAll
@@ -86,11 +84,6 @@ public class EventBridgeSinkConnectorIT {
     ComposeFile = new File(ComposeFileLocation);
     HttpClient =
         java.net.http.HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
-    TestEvent =
-        new ObjectMapper()
-            .createObjectNode()
-            .put("sentTimestamp", LocalDateTime.now().toString())
-            .put("message", "hello from kafka");
 
     startDockerComposeEnvironment();
     createAwsResources();
@@ -214,7 +207,7 @@ public class EventBridgeSinkConnectorIT {
   }
 
   @Test
-  public void sendTestRecord() {
+  public void sendJsonRecordToKafkaReceiveFromSQS() {
     log.info("creating kafka producer");
     var producerConfig =
         ImmutableMap.of(
@@ -229,23 +222,27 @@ public class EventBridgeSinkConnectorIT {
     KafkaProducer producer =
         new KafkaProducer(producerConfig, new StringSerializer(), new JsonSerializer());
 
+    var mapper = new ObjectMapper();
+
+    var jsonTestEvent =
+        mapper
+            .createObjectNode()
+            .put("sentTimestamp", LocalDateTime.now().toString())
+            .put("message", "hello from kafka");
+
     try {
-      log.info("sending kafka test record to topic {}", TEST_RESOURCE_NAME);
-      producer.send(new ProducerRecord<>(TEST_RESOURCE_NAME, TEST_EVENT_KEY, TestEvent)).get();
+      log.info("sending kafka json test record {} to topic {}", jsonTestEvent, TEST_RESOURCE_NAME);
+      producer.send(new ProducerRecord<>(TEST_RESOURCE_NAME, TEST_EVENT_KEY, jsonTestEvent)).get();
       producer.flush();
       producer.close(Duration.of(3, ChronoUnit.SECONDS));
     } catch (Exception e) {
-      fail("could not send test record", e);
+      fail("could not send json test record", e);
     }
-    log.info("sent kafka test record");
-  }
+    log.info("successfully sent json test record to kafka");
 
-  @Test
-  public void testReceiveMessageFromSQS() {
-    var mapper = new ObjectMapper();
-    var gotMessageBody = new AtomicReference<JsonNode>(mapper.createObjectNode());
+    var gotMessageDetailValue = new AtomicReference<JsonNode>(mapper.createObjectNode());
 
-    log.info("polling sqs queue {} for test record", getQueueArn());
+    log.info("polling sqs queue {} for json test record", getQueueArn());
     Awaitility.await()
         .atMost(5, TimeUnit.SECONDS)
         .pollInterval(1, TimeUnit.SECONDS)
@@ -266,11 +263,14 @@ public class EventBridgeSinkConnectorIT {
 
               var detailValue = new ObjectMapper().readTree(messageBody).path("detail");
               log.info("retrieved eventbridge event detail value: {}", detailValue);
-              gotMessageBody.set(detailValue);
+              gotMessageDetailValue.set(detailValue);
             });
 
-    Assertions.assertEquals(TEST_EVENT_KEY, gotMessageBody.get().path("key").asText(""));
-    Assertions.assertEquals(TestEvent, gotMessageBody.get().path("value"));
+    Assertions.assertTrue(gotMessageDetailValue.get().path("partition").asInt(-1) >= 0);
+    Assertions.assertTrue(gotMessageDetailValue.get().path("offset").asInt(-1) >= 0);
+    Assertions.assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("topic").asText(""));
+    Assertions.assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("key").asText(""));
+    Assertions.assertEquals(jsonTestEvent, gotMessageDetailValue.get().path("value"));
   }
 
   private String getQueueUrl() {
