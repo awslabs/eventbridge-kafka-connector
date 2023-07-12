@@ -82,6 +82,10 @@ export COMPOSE_FILE=e2e/docker_compose.yaml
 mvn clean verify -Drevision=$(git describe --tags --always)
 ```
 
+> **Note**  
+> If Docker cannot be used, alternative solutions, such as [`Finch`](https://github.com/runfinch/finch) or
+> [`Podman`](https://podman.io/) can be tried (untested).
+
 #### Running a local Kafka Connect Test Environment
 
 Requirements:
@@ -104,25 +108,39 @@ mvn clean package -Drevision=$(git describe --tags --always)
 
 # move to the e2e directory
 cd e2e
+```
 
+Skip the next step if you already have these credentials configured in your environment:
+
+```bash
 # set credentials used by the connector to send events to EventBridge (or assume a corresponding role)
 export AWS_DEFAULT_REGION=us-east-1
 export AWS_ACCESS_KEY_ID=ABCDEFGHIJKLMNOPQRST
 export AWS_SECRET_ACCESS_KEY=ABCDEFGHIJKLMNOPQRST
 export AWS_SESSION_TOKEN=ABCDEFGHIJKLMNOPQRST
+```
 
-# remove any previous resources and create the local test environment
+The following command removes any previous resources and creates the local test environment:
+
+```bash
 docker-compose -f docker_compose.yaml down --remove-orphans -v && docker-compose -f docker_compose.yaml up
 ```
 
 > **Note**  
 > The Docker Compose environment includes [LocalStack](https://localstack.cloud/) to emulate AWS resources, such as SQS and EventBridge. If you want to use LocalStack use `test` for the access key id and secret environment variable and pass `--endpoint-url=http://localhost:4566` to your `aws` CLI commands.
 
-Change the JSON configuration example `connect-config-json.json` (uses LocalStack defaults) according to your
+Move on to next section when you see following lines:
+
+```bash
+e2e-connect-1     | [2023-07-12 09:07:29,262] INFO REST resources initialized; server is started and ready to handle requests (org.apache.kafka.connect.runtime.rest.RestServer:302)
+e2e-connect-1     | [2023-07-12 09:07:29,263] INFO Kafka Connect started (org.apache.kafka.connect.runtime.Connect:57)
+```
+
+Change the JSON configuration example `connect-config.json` (uses LocalStack defaults) according to your
 environment. In a separate terminal (within the `e2e` folder) deploy the connector:
 
 ```bash
-curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @connect-config-json.json
+curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @connect-config.json
 ```
 
 The output should look like:
@@ -138,7 +156,8 @@ Server: Jetty(9.4.51.v20230217)
 {"name":"eventbridge-e2e","config":{"auto.offset.reset":"earliest","connector.class":"software.amazon.event.kafkaconnector.EventBridgeSinkConnector","topics":"eventbridge-e2e","aws.eventbridge.connector.id":"eventbridge-e2e-connector","aws.eventbridge.eventbus.arn":"arn:aws:events:us-east-1:1234567890:event-bus/eventbridge-e2e","aws.eventbridge.region":"us-east-1","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.json.JsonConverter","value.converter.schemas.enable":"false","name":"eventbridge-e2e"},"tasks":[{"connector":"eventbridge-e2e","task":0}],"type":"sink"}
 ```
 
-Before proceeding, verify that the Docker Compose logs do not show any errors. You should see logs like:
+Before proceeding, verify that the Docker Compose logs do not show any errors, such as `WARN`, `ERROR`, or `FATAL` log
+entries. You should see logs like:
 
 ```bash
 e2e-connect-1     | [2023-07-04 09:35:59,034] TRACE [eventbridge-e2e|task-0] EventBridgeSinkTask put called with 0 records: [] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:68)
@@ -161,9 +180,36 @@ The Docker Compose logs output should look like:
 ```console
 e2e-connect-1     | [2023-07-04 09:54:55,824] TRACE [eventbridge-e2e|task-0] EventBridgeSinkTask put called with 1 records: [SinkRecord{kafkaOffset=1, timestampType=CreateTime} ConnectRecord{topic='eventbridge-e2e', kafkaPartition=0, key=null, keySchema=Schema{STRING}, value={hello=world}, valueSchema=null, timestamp=1688464495808, headers=ConnectHeaders(headers=)}] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:68)
 e2e-connect-1     | [2023-07-04 09:54:55,824] TRACE [eventbridge-e2e|task-0] putItems call started: start=2023-07-04T09:54:55.824953210Z attempts=1 maxRetries=2 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:81)
-e2e-connect-1     | [2023-07-04 09:54:55,825] TRACE [eventbridge-e2e|task-0] Sending request to EventBridge: PutEventsRequest(Entries=[PutEventsRequestEntry(Source=kafka-connect.eventbridge-e2e-connector, Resources=[], DetailType=kafka-connect-eventbridge-e2e, Detail={"topic":"eventbridge-e2e","partition":0,"offset":1,"timestamp":1688464495808,"timestampType":"CreateTime","headers":[],"key":null,"value":{"hello":"world"}}, EventBusName=arn:aws:events:us-east-1:1234567890:event-bus/eventbridge-e2e)]) (software.amazon.event.kafkaconnector.EventBridgeWriter:152)
+e2e-connect-1     | [2023-07-04 09:54:55,825] TRACE [eventbridge-e2e|task-0] Sending request to EventBridge: PutEventsRequest(Entries=[PutEventsRequestEntry(Source=kafka-connect.eventbridge-e2e-connector, Resources=[], DetailType=kafka-connect-eventbridge-e2e, Detail={"topic":"eventbridge-e2e","partition":0,"offset":0,"timestamp":1688464495808,"timestampType":"CreateTime","headers":[],"key":null,"value":{"hello":"world"}}, EventBusName=arn:aws:events:us-east-1:1234567890:event-bus/eventbridge-e2e)]) (software.amazon.event.kafkaconnector.EventBridgeWriter:152)
 e2e-connect-1     | [2023-07-04 09:54:56,100] TRACE [eventbridge-e2e|task-0] putEvents response: [PutEventsResultEntry(EventId=29725ba0-c013-9457-0be2-51ba26708d3d)] (software.amazon.event.kafkaconnector.EventBridgeWriter:154)
 e2e-connect-1     | [2023-07-04 09:54:56,301] TRACE [eventbridge-e2e|task-0] putItems call completed: start=2023-07-04T09:54:55.824953210Z completion=2023-07-04T09:54:56.301049627Z durationMillis=476 attempts=1 maxRetries=2 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:105)
+```
+
+The output event should look similar to the below:
+
+```json
+{
+    "version": "0",
+    "id": "467efba4-6a53-d275-a52c-416a0c22abe4",
+    "detail-type": "kafka-connect-eventbridge-e2e",
+    "source": "kafka-connect.eventbridge-e2e-connector",
+    "account": "1234567890",
+    "time": "2023-07-06T16:02:19Z",
+    "region": "us-east-1",
+    "resources": [],
+    "detail": {
+        "topic": "eventbridge-e2e",
+        "partition": 0,
+        "offset": 0,
+        "timestamp": 1688659338101,
+        "timestampType": "CreateTime",
+        "headers": [],
+        "key": null,
+        "value": {
+            "hello": "world"
+        }
+    }
+}
 ```
 
 To tear down the environment run:
