@@ -56,7 +56,7 @@ public class EventBridgeSinkConnectorIT {
   private static final URI LOCALSTACK_ENDPOINT = URI.create("http://localhost:4566");
   private static final String BOOTSTRAP_SERVER = "localhost:9092";
   private static final String RUNNING_STATE = "RUNNING";
-  private static final String CONNECTOR_CONFIG_LOCATION = "e2e/connect-config-json.json";
+  private static final String CONNECTOR_CONFIG_LOCATION = "e2e/connect-config.json";
 
   private static final String TEST_RESOURCE_NAME = "eventbridge-e2e";
   private static final String TEST_EVENT_KEY = "eventbridge-e2e";
