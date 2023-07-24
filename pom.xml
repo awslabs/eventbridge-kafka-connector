@@ -26,7 +26,7 @@
         <com.google.guava.version>32.1.1-jre</com.google.guava.version>
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-logging.version>1.2</commons-logging.version>
-        <connect.api.version>3.5.0</connect.api.version>
+        <connect.api.version>3.5.1</connect.api.version>
         <joda-time.version>2.12.5</joda-time.version>
         <org.apache.commons.version>3.12.0</org.apache.commons.version>
         <org.assertj.version>3.24.2</org.assertj.version>
