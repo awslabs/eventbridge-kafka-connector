@@ -11,11 +11,10 @@ import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.repor
 import static software.amazon.event.kafkaconnector.EventBridgeResult.failure;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.success;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import java.nio.charset.StandardCharsets;
+import java.io.IOException;
 import java.util.List;
 import org.apache.kafka.connect.header.Header;
 import org.apache.kafka.connect.json.JsonConverter;
@@ -67,7 +66,7 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
     }
   }
 
-  private String createJsonPayload(SinkRecord record) throws JsonProcessingException {
+  private String createJsonPayload(SinkRecord record) throws IOException {
     var root = objectMapper.createObjectNode();
     root.put("topic", record.topic());
     root.put("partition", record.kafkaPartition());
@@ -103,9 +102,9 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
    *
    * @param record Kafka record to be sent to EventBridge
    * @return headers to be added to EventBridge message
-   * @throws JsonProcessingException
+   * @throws IOException
    */
-  private ArrayNode createHeaderArray(SinkRecord record) throws JsonProcessingException {
+  private ArrayNode createHeaderArray(SinkRecord record) throws IOException {
     var headersArray = objectMapper.createArrayNode();
 
     for (Header header : record.headers()) {
@@ -125,9 +124,9 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
    *
    * @param jsonBytes - byteArray to convert to JSON
    * @return the JSON representation of jsonBytes
-   * @throws JsonProcessingException
+   * @throws IOException
    */
-  private JsonNode createJSONFromByteArray(byte[] jsonBytes) throws JsonProcessingException {
-    return objectMapper.readTree(new String(jsonBytes, StandardCharsets.UTF_8));
+  private JsonNode createJSONFromByteArray(byte[] jsonBytes) throws IOException {
+    return objectMapper.readTree(jsonBytes);
   }
 }
