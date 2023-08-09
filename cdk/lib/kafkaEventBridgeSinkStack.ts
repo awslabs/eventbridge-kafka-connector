@@ -21,7 +21,7 @@ import {PolicyStatement} from "aws-cdk-lib/aws-iam";
 import {Analyzer} from "./analyzerConstruct";
 import * as glue from 'aws-cdk-lib/aws-glue';
 import * as eb from 'aws-cdk-lib/aws-events';
-
+import {NagSuppressions} from 'cdk-nag'
 
 export interface KafkaEventBridgeSinkStackProps extends cdk.StackProps {
     deploymentMode: string;
@@ -63,7 +63,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
 
         const bootstrapServers = new AwsCustomResource(this, 'bootstrapServers', {
             policy: AwsCustomResourcePolicy.fromSdkCalls({
-                resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE
+                resources: [cluster.attrArn]
             }),
             installLatestAwsSdk: true,
             logRetention: RetentionDays.ONE_WEEK,
@@ -90,7 +90,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
         });
 
         const eventBus = new eb.EventBus(this, 'eventbus', {
-           eventBusName: 'eventbridge-sink-eventbus'
+            eventBusName: 'eventbridge-sink-eventbus'
         })
 
 
@@ -137,7 +137,6 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
         })
 
 
-
         if (props.deploymentMode === 'FULL') {
             const connector = new Connector(this, 'connector', {
                 vpc,
@@ -159,7 +158,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
 
         connectorRole.addToPolicy(new iam.PolicyStatement({
             actions: ['glue:GetSchemaVersion'],
-            resources: [`*`]
+            resources: [`arn:aws:glue:${this.region}:${this.account}:*`]
         }))
 
         connectorRole.addToPolicy(new PolicyStatement({
@@ -188,16 +187,31 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             resources: [`arn:aws:kafka:${this.region}:${this.account}:group/${cluster.clusterName}/*`]
         }))
 
-
-
-
-
-
-
-
-
-
-
-
+        NagSuppressions.addStackSuppressions(this, [
+            {
+                id: 'AwsSolutions-VPC7',
+                reason: 'Not needed, keeping cost low for sample'
+            },
+            {
+                id: 'AwsSolutions-L1',
+                reason: 'AWS custom resources runtime cannot be changed'
+            },
+            {
+                id: 'AwsSolutions-ECS2',
+                reason: 'Not needed, keeping cost low for sample'
+            },
+            {
+                id: 'AwsSolutions-ECS2',
+                reason: 'Not needed, keeping cost low for sample'
+            },
+            {
+                id: 'AwsSolutions-IAM5',
+                reason: 'MSK and Glue need * permissions. https://docs.aws.amazon.com/msk/latest/developerguide/iam-access-control.html '
+            },
+            {
+                id: 'AwsSolutions-IAM4',
+                reason: 'Log Retention Lambda is owned by CDK, Policy cant be changed.'
+            }
+        ])
     }
 }

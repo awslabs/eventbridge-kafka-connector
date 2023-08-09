@@ -10,6 +10,7 @@ import {Compatibility, ContainerImage, LogDriver} from "aws-cdk-lib/aws-ecs";
 import {PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import * as path from "path";
 import {aws_glue, aws_iam} from "aws-cdk-lib";
+import {NagSuppressions} from "cdk-nag";
 
 export interface ProducerProps {
     vpc: ec2.Vpc;
@@ -109,6 +110,13 @@ export class Producer extends Construct {
             ],
             resources: ['*']
         }))
+
+        NagSuppressions.addResourceSuppressions(cluster, [
+            {
+                id: 'AwsSolutions-ECS4',
+                reason: 'Not needed for this sample, keeping cost low'
+            }
+        ])
 
     }
 }

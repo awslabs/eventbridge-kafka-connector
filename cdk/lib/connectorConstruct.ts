@@ -78,7 +78,7 @@ export class Connector extends Construct {
                 'kafkaconnect:DeleteCustomPlugin',
                 'kafkaconnect:UpdateCustomPlugin'
             ],
-            resources: ['*']
+            resources: [`arn:aws:kafkaconnect:${props.region}:${props.account}:*`]
         }))
 
         pluginBucket.grantRead(pluginCreationEventHandler)

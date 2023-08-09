@@ -1,6 +1,6 @@
 # Kafka Connector for Amazon EventBridge Deployment on AWS
 
-This CDK stack is sample deployment to for the Kafka Connector for Amazon EventBridge. 
+This CDK stack is sample deployment for the Kafka Connector for Amazon EventBridge. 
 
 > :warning: **This sample is not meant to be deployed to production environments!**
 

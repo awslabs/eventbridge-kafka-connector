@@ -28,6 +28,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+
+/**
+ * This class creates a Kafka Producer that sends messages to a Kafka topic
+ */
 public class Producer {
 
     private static final Logger log = LogManager.getLogger(Producer.class);
@@ -47,6 +51,11 @@ public class Producer {
 
         var kafkaProducer = createKafkaProducer();
         var schema = createSchema(schemaFile);
+
+        var topicCreator = new ProducerTopicCreator(properties);
+        topicCreator.createTopic(topic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
+        topicCreator.close();
+
         var newTopic = createTopic(topic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
 
         var producerMetricReporter = new ProducerMetricReporter(kafkaProducer, 10, TimeUnit.SECONDS);

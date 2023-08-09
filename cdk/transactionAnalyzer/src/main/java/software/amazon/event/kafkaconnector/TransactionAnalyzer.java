@@ -53,6 +53,7 @@ public class TransactionAnalyzer {
 
         var topicCreator = new TransactionAnalyzerTopicCreator(properties);
         topicCreator.createTopic(notificationsTopic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
+        //Try to create source topic as well, in case Producer is not started yet
         topicCreator.createTopic(sourceTopic, Integer.valueOf(partitionCount), Short.valueOf(replicationFactor));
         topicCreator.close();
 
@@ -88,7 +89,7 @@ public class TransactionAnalyzer {
             latch.await();
 
         } catch (Throwable e) {
-            log.info("Transaction Analyzer failed. Shutting down application.");
+            log.error("Transaction Analyzer failed. Shutting down application.");
             System.exit(1);
         }
         log.info("Transaction Analyzer has completed execution. Shutting down application.");
@@ -149,7 +150,7 @@ public class TransactionAnalyzer {
      * @return {@link GenericRecord} A record with the provided schema
      */
     private static GenericRecord createNotificationRecord(String userId, GenericRecord value,  Schema notificationSchema) {
-        log.debug("Creating notfication record for");
+
         var notification = new GenericData.Record(notificationSchema);
         notification.put("source", "transactionAnalyzer");
         notification.put("eventType", "suspiciousActivity");
@@ -158,6 +159,9 @@ public class TransactionAnalyzer {
         eventDetail.put("userId", userId);
         eventDetail.put("total", Double.parseDouble(value.get("total").toString()));
         notification.put("eventDetail", eventDetail);
+
+        log.debug("Creating notfication record for user {}", userId);
+
         return notification;
     }
 
