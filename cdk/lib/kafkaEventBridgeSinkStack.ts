@@ -22,6 +22,7 @@ import {Analyzer} from "./analyzerConstruct";
 import * as glue from 'aws-cdk-lib/aws-glue';
 import * as eb from 'aws-cdk-lib/aws-events';
 import {NagSuppressions} from 'cdk-nag'
+import * as ssm from "aws-cdk-lib/aws-ssm";
 
 export interface KafkaEventBridgeSinkStackProps extends cdk.StackProps {
     deploymentMode: string;
@@ -48,6 +49,8 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
 
 
 
+
+
         const mskSG = new ec2.SecurityGroup(this, 'mskSG', {
             securityGroupName: `mskClusterSecurityGroup-${this.stackName}`,
             description: 'Security group for Amazon MSK cluster',
@@ -69,10 +72,31 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             }],
         });
 
+        const eventBridgeVPCEndpoint = new ec2.InterfaceVpcEndpoint(this, 'eventBridgeVpcEndpoint', {
+            vpc,
+            open: true,
+            service: ec2.InterfaceVpcEndpointAwsService.EVENTBRIDGE,
+            privateDnsEnabled: true,
+        })
+
         const glueVpcEndpoint = new ec2.InterfaceVpcEndpoint(this, 'glueVpcEndpoint', {
             vpc,
             open: true,
             service: ec2.InterfaceVpcEndpointAwsService.GLUE,
+            privateDnsEnabled: true,
+        })
+
+        const cloudwatchVpcEndpoint = new ec2.InterfaceVpcEndpoint(this, 'cloudwatchVpcEndpoint', {
+            vpc,
+            open: true,
+            service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH,
+            privateDnsEnabled: true,
+        })
+
+        const ecrVpcEndpoint = new ec2.InterfaceVpcEndpoint(this, 'ecrVpcEndpoint', {
+            vpc,
+            open: true,
+            service: ec2.InterfaceVpcEndpointAwsService.ECR,
             privateDnsEnabled: true,
         })
 
@@ -99,6 +123,10 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             }
         })
 
+        const bootstrapServersParameter = new ssm.StringParameter(this, 'bootstrapServersParameter', {
+            stringValue: bootstrapServers.getResponseField('BootstrapBrokerStringSaslIam')
+        })
+
         const schemaRegistry = new glue.CfnRegistry(this, 'registry', {
             name: 'streaming',
             description: 'Schema Registry for deploying the EventBridge Sink connector',
@@ -108,24 +136,40 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             eventBusName: 'eventbridge-sink-eventbus'
         })
 
+        const notificationTopic = new ssm.StringParameter(this, 'notificationsTopic', {
+            stringValue: 'notificationsTopic'
+        })
+        const eventsTopic = new ssm.StringParameter(this, 'eventsTopic', {
+            stringValue: 'events'
+        })
+
+        const schemaRegistryName = new ssm.StringParameter(this, 'schemaRegistryName', {
+            stringValue: schemaRegistry.name
+        })
 
         const producer = new Producer(this, 'kafkaProducer', {
             vpc,
-            bootstrapServers: bootstrapServers.getResponseField('BootstrapBrokerStringSaslIam'),
+            bootstrapServersParameter: bootstrapServersParameter,
             region: this.region,
             account: this.account,
             clusterName: cluster.clusterName,
             schemaRegistry: schemaRegistry,
+            schemaRegistryName,
+            eventsTopic,
+            notificationTopic
         })
 
         const transactionAnalyzer = new Analyzer(this, 'transactionAnalyzer', {
             vpc,
             ecsCluster: producer.ecsCluster,
-            bootstrapServers: bootstrapServers.getResponseField('BootstrapBrokerStringSaslIam'),
+            bootstrapServersParameter: bootstrapServersParameter,
             region: this.region,
             account: this.account,
             clusterName: cluster.clusterName,
             schemaRegistry: schemaRegistry,
+            schemaRegistryName,
+            eventsTopic,
+            notificationTopic
         })
 
         transactionAnalyzer.node.addDependency(producer)

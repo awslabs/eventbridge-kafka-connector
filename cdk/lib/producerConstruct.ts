@@ -9,16 +9,19 @@ import * as ecs from "aws-cdk-lib/aws-ecs";
 import {Compatibility, ContainerImage, LogDriver} from "aws-cdk-lib/aws-ecs";
 import {PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import * as path from "path";
-import {aws_glue, aws_iam} from "aws-cdk-lib";
+import {aws_glue, aws_iam, aws_ssm} from "aws-cdk-lib";
 import {NagSuppressions} from "cdk-nag";
 
 export interface ProducerProps {
     vpc: ec2.Vpc;
-    bootstrapServers: string;
+    bootstrapServersParameter: aws_ssm.StringParameter;
     region: string;
     account: string;
     clusterName: string;
     schemaRegistry: aws_glue.CfnRegistry;
+    schemaRegistryName: aws_ssm.StringParameter;
+    eventsTopic: aws_ssm.StringParameter;
+    notificationTopic: aws_ssm.StringParameter;
 }
 
 export class Producer extends Construct {
@@ -32,7 +35,8 @@ export class Producer extends Construct {
         super(scope, id);
 
         const cluster = new ecs.Cluster(this, "cluster", {
-            vpc: props.vpc
+            vpc: props.vpc,
+            containerInsights: true
         });
 
         this.ecsCluster = cluster
@@ -58,11 +62,10 @@ export class Producer extends Construct {
             logging: LogDriver.awsLogs({
                 streamPrefix: 'kafkaProducer',
             }),
-            environment: {
-                BOOTSTRAP_SERVERS: props.bootstrapServers,
-                TOPIC_NAME: 'events',
-                NUMBER_OF_PRODUCERS: '1',
-                SCHEMA_REGISTRY_NAME : props.schemaRegistry.name
+            secrets: {
+                'BOOTSTRAP_SERVERS' : ecs.Secret.fromSsmParameter(props.bootstrapServersParameter),
+                'TOPIC_NAME': ecs.Secret.fromSsmParameter(props.eventsTopic),
+                'SCHEMA_REGISTRY_NAME': ecs.Secret.fromSsmParameter(props.schemaRegistryName)
             },
             cpu: 1024,
             memoryLimitMiB: 2048

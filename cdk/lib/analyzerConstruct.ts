@@ -5,22 +5,24 @@
 
 import {Construct} from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import * as logs from "aws-cdk-lib/aws-logs";
-import {RetentionDays} from "aws-cdk-lib/aws-logs";
+import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import {Compatibility, ContainerImage, LogDriver} from "aws-cdk-lib/aws-ecs";
 import {PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";
 import * as path from "path";
-import {aws_glue, aws_iam, RemovalPolicy} from "aws-cdk-lib";
+import {aws_glue, aws_ssm} from "aws-cdk-lib";
 
 export interface AnalyzerProps {
     ecsCluster: ecs.Cluster;
     vpc: ec2.Vpc;
-    bootstrapServers: string;
     region: string;
     account: string;
     clusterName: string;
+    bootstrapServersParameter: aws_ssm.StringParameter;
     schemaRegistry: aws_glue.CfnRegistry;
+    schemaRegistryName: aws_ssm.StringParameter;
+    eventsTopic: aws_ssm.StringParameter;
+    notificationTopic: aws_ssm.StringParameter;
 }
 
 export class Analyzer extends Construct {
@@ -46,16 +48,17 @@ export class Analyzer extends Construct {
             taskRole: this.taskRole
         })
 
+
         taskDefinition.addContainer('container', {
             image: ContainerImage.fromAsset(path.join(__dirname, '../transactionAnalyzer')),
             logging: LogDriver.awsLogs({
                 streamPrefix: 'kafkaProducer',
             }),
-            environment: {
-                BOOTSTRAP_SERVERS: props.bootstrapServers,
-                TOPIC_NAME: 'events',
-                NOTIFICATIONS_TOPIC_NAME: 'notifications',
-                SCHEMA_REGISTRY_NAME : props.schemaRegistry.name
+            secrets: {
+                'NOTIFICATIONS_TOPIC_NAME': ecs.Secret.fromSsmParameter(props.notificationTopic),
+                'TOPIC_NAME': ecs.Secret.fromSsmParameter(props.eventsTopic),
+                'SCHEMA_REGISTRY_NAME': ecs.Secret.fromSsmParameter(props.schemaRegistryName),
+                'BOOTSTRAP_SERVERS' : ecs.Secret.fromSsmParameter(props.bootstrapServersParameter)
             },
             cpu: 1024,
             memoryLimitMiB: 2048

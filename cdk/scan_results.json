@@ -1,0 +1,105 @@
+{
+  "errors": [],
+  "paths": {
+    "_comment": "<add --verbose for a list of skipped paths>",
+    "scanned": [
+      ".npmignore",
+      "README.md",
+      "bin/kafkaEventBridgeSink.ts",
+      "cdk.context.json",
+      "cdk.json",
+      "connectorConfigurationJson.json",
+      "customResources/connectorPlugin/index.py",
+      "customResources/connectorPlugin/requirements.txt",
+      "customResources/connectorPluginDownload/index.py",
+      "customResources/connectorPluginDownload/requirements.txt",
+      "images/architecture.png",
+      "kafkaProducer/Dockerfile",
+      "kafkaProducer/pom.xml",
+      "kafkaProducer/src/main/java/software/amazon/event/kafkaconnector/Producer.java",
+      "kafkaProducer/src/main/java/software/amazon/event/kafkaconnector/ProducerEventSender.java",
+      "kafkaProducer/src/main/java/software/amazon/event/kafkaconnector/ProducerMetricReporter.java",
+      "kafkaProducer/src/main/java/software/amazon/event/kafkaconnector/ProducerTopicCreator.java",
+      "kafkaProducer/src/main/resources/log4j2.xml",
+      "kafkaProducer/src/main/resources/payload.avsc",
+      "lib/analyzerConstruct.ts",
+      "lib/connectorConstruct.ts",
+      "lib/kafkaEventBridgeSinkStack.ts",
+      "lib/producerConstruct.ts",
+      "package-lock.json",
+      "package.json",
+      "transactionAnalyzer/.gitignore",
+      "transactionAnalyzer/Dockerfile",
+      "transactionAnalyzer/pom.xml",
+      "transactionAnalyzer/src/main/java/software/amazon/event/kafkaconnector/TransactionAnalyzer.java",
+      "transactionAnalyzer/src/main/java/software/amazon/event/kafkaconnector/TransactionAnalyzerTopicCreator.java",
+      "transactionAnalyzer/src/main/resources/log4j2.xml",
+      "transactionAnalyzer/src/main/resources/notification.avsc",
+      "tsconfig.json"
+    ]
+  },
+  "results": [
+    {
+      "check_id": "generic.secrets.security.detected-generic-secret.detected-generic-secret",
+      "end": {
+        "col": 92,
+        "line": 47,
+        "offset": 1935
+      },
+      "extra": {
+        "engine_kind": "OSS",
+        "fingerprint": "7a7320f00561ca5bd8b77438de1b967bf79a7cb40bf53de4ff800ee9c9c2c43d4f9a28e4ef3fe8d5a05cd67d8ccae7c2bcb7948b270afd57a35cc34090d98973_0",
+        "is_ignored": false,
+        "lines": "    \"@aws-cdk/aws-secretsmanager:useAttachedSecretResourcePolicyForSecretTargetAttachments\": false,",
+        "message": "Generic Secret detected",
+        "metadata": {
+          "category": "security",
+          "confidence": "LOW",
+          "cwe": [
+            "CWE-798: Use of Hard-coded Credentials"
+          ],
+          "cwe2021-top25": true,
+          "cwe2022-top25": true,
+          "impact": "MEDIUM",
+          "license": "Commons Clause License Condition v1.0[LGPL-2.1-only]",
+          "likelihood": "LOW",
+          "owasp": [
+            "A07:2021 - Identification and Authentication Failures"
+          ],
+          "references": [
+            "https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures"
+          ],
+          "semgrep.dev": {
+            "rule": {
+              "origin": "community",
+              "rule_id": "r6Urqe",
+              "url": "https://semgrep.dev/playground/r/YDToQR/generic.secrets.security.detected-generic-secret.detected-generic-secret",
+              "version_id": "YDToQR"
+            }
+          },
+          "shortlink": "https://sg.run/l2o5",
+          "source": "https://semgrep.dev/r/generic.secrets.security.detected-generic-secret.detected-generic-secret",
+          "source-rule-url": "https://github.com/dxa4481/truffleHogRegexes/blob/master/truffleHogRegexes/regexes.json",
+          "subcategory": [
+            "audit"
+          ],
+          "technology": [
+            "secrets"
+          ],
+          "vulnerability_class": [
+            "Hard-coded Secrets"
+          ]
+        },
+        "metavars": {},
+        "severity": "ERROR"
+      },
+      "path": "cdk.json",
+      "start": {
+        "col": 45,
+        "line": 47,
+        "offset": 1888
+      }
+    }
+  ],
+  "version": "1.35.0"
+}
