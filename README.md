@@ -188,7 +188,7 @@ JSON-encoded keys) using [AWS Glue Schema Registry](https://docs.aws.amazon.com/
     "value.converter.region": "us-east-1",
     // GSR registry to use (expects schemas to exist and IAM role to have permission to read)
     "value.converter.registry.name": "avro-kafka-eventbridge",
-    "value.converter.avroRecordType": "GENERIC_RECORD",
+    "value.converter.avroRecordType": "GENERIC_RECORD"
   }
 }
 ```
@@ -406,6 +406,18 @@ However, depending on your quota and ingestion rate, if the client keeps hitting
 exception to the connector. When setting `aws.eventbridge.retries.max` greater than `0`, the connector will attempt to
 retry such a failed `PutEvents` attempt up to `aws.eventbridge.retries.max`. If `aws.eventbridge.retries.max` is 0 or
 the retry budget is exhausted, a terminal `ConnectException` is thrown and the task will be stopped.
+
+We recommend to verify your `PutEvents` account quota for the specific AWS
+[region](https://docs.aws.amazon.com/general/latest/gr/ev.html) and adjusting the Kafka Connect worker (consumer)
+setting `consumer.max.poll.records` accordingly. For example, if your `PutEvents` quota is `500`, setting
+`consumer.max.poll.records=400` in the Kafka Connect worker properties leaves enough headroom.
+
+> **Note**  
+> `consumer.max.poll.interval.ms` is a related setting after which a consumer is considered failed and will leave the
+> consumer group. Continuing the example above, if `consumer.max.poll.records=400` and
+> `consumer.max.poll.interval.ms=300000` (the default as of Kafka 3.5), it means that processing `400` records is
+> allowed to take up to 5 minutes, i.e., 750 milliseconds per record/event, before considering the consumer (task)
+> failed.
 
 ### Payloads exceeding `PutEvents` Limit
 
