@@ -31,7 +31,22 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: KafkaEventBridgeSinkStackProps) {
         super(scope, id, props);
 
-        const vpc = new ec2.Vpc(this, 'vpc')
+        const vpc = new ec2.Vpc(this, 'vpc', )
+
+        const vpcFlowLogsLogGroup = new logs.LogGroup(this, 'vpcFlowLogs');
+
+        const vpcFlowLogRole = new iam.Role(this, 'flowLogRole', {
+            assumedBy: new iam.ServicePrincipal('vpc-flow-logs.amazonaws.com')
+        });
+
+        vpcFlowLogsLogGroup.grantWrite(vpcFlowLogRole)
+
+        const flowLogs = new ec2.FlowLog(this, 'flowLog', {
+            resourceType: ec2.FlowLogResourceType.fromVpc(vpc),
+            destination: ec2.FlowLogDestination.toCloudWatchLogs(vpcFlowLogsLogGroup, vpcFlowLogRole)
+        })
+
+
 
         const mskSG = new ec2.SecurityGroup(this, 'mskSG', {
             securityGroupName: `mskClusterSecurityGroup-${this.stackName}`,

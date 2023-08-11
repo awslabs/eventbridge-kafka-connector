@@ -38,7 +38,8 @@ export class Connector extends Construct {
 
         const pluginBucket = new s3.Bucket(this, 'pluginBucket', {
             removalPolicy: RemovalPolicy.DESTROY,
-            autoDeleteObjects: true
+            autoDeleteObjects: true,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL
         })
 
         const pluginDownloadEventHandler = new lambda_python.PythonFunction(this, 'pluginDownloadEventHandler', {
