@@ -276,6 +276,54 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>io.confluent</groupId>
+                <artifactId>kafka-connect-maven-plugin</artifactId>
+                <version>0.12.0</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <description>
+                                This Kafka sink connector for Amazon EventBridge allows you to send events (records)
+                                from one or multiple Kafka topics to the specified event bus, including useful features
+                                such as configurable topic to event detail-type name mapping, IAM role-based
+                                authentication, support for dead-letter queues, and schema registry support for Avro and
+                                Protocol Buffers (Protobuf).
+                            </description>
+                            <componentTypes>
+                                <componentType>sink</componentType>
+                            </componentTypes>
+                            <deliveryGuarantee>
+                                <deliveryGuarantee>atLeastOnce</deliveryGuarantee>
+                            </deliveryGuarantee>
+                            <documentationUrl>
+                                https://github.com/awslabs/eventbridge-kafka-connector#kafka-connector-for-amazon-eventbridge
+                            </documentationUrl>
+                            <logo>logos/eventbridge.jpg</logo>
+                            <ownerLogo>logos/aws.jpg</ownerLogo>
+                            <ownerName>Amazon Web Services</ownerName>
+                            <ownerType>organization</ownerType>
+                            <ownerUrl>https://aws.amazon.com</ownerUrl>
+                            <ownerUsername>aws</ownerUsername>
+                            <supportSummary>The connector is released as a community-supported open-source project with
+                                best effort support from the repository maintainers.
+                            </supportSummary>
+                            <supportUrl>
+                                https://github.com/awslabs/eventbridge-kafka-connector#kafka-connector-for-amazon-eventbridge
+                            </supportUrl>
+                            <tags>
+                                <tag>eventbridge</tag>
+                                <tag>aws</tag>
+                                <tag>eda</tag>
+                            </tags>
+                            <title>Amazon EventBridge Sink Connector</title>
+                        </configuration>
+                        <goals>
+                            <goal>kafka-connect</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.1.2</version>

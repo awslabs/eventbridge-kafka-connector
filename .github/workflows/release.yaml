@@ -45,4 +45,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Creating release from tag ${TAG}"
-          gh release create ${TAG} --generate-notes LICENSE NOTICE THIRD-PARTY-LICENSES README.md target/*.jar
+          gh release create ${TAG} --generate-notes LICENSE NOTICE THIRD-PARTY-LICENSES README.md target/*.jar target/components/packages/*.zip
