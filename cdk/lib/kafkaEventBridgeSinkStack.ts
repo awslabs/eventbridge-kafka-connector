@@ -175,6 +175,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             actions: ['glue:GetSchemaVersion'],
             resources: [`arn:aws:glue:${this.region}:${this.account}:*`]
         }))
+        //Topic scope can not be limited as user defined topics are allowed
 
         connectorRole.addToPolicy(new PolicyStatement({
             actions: [
@@ -193,6 +194,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             ],
             resources: [`arn:aws:kafka:${this.region}:${this.account}:topic/${cluster.clusterName}/*`]
         }))
+        //Topic scope can not be limited as user defined topics are allowed
 
         connectorRole.addToPolicy(new PolicyStatement({
             actions: [
@@ -201,6 +203,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             ],
             resources: [`arn:aws:kafka:${this.region}:${this.account}:group/${cluster.clusterName}/*`]
         }))
+        //Group scope can not be limited as group name is random
 
         NagSuppressions.addStackSuppressions(this, [
             {

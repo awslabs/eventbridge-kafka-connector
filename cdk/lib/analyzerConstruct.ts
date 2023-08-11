@@ -83,6 +83,7 @@ export class Analyzer extends Construct {
                 "kafka-cluster:ReadData"
             ],
             resources: [`arn:aws:kafka:${props.region}:${props.account}:topic/${props.clusterName}/*`]
+            //Topic scope can not be limited as user defined topics are allowed
         }))
 
         this.taskRole.addToPolicy(new PolicyStatement({
@@ -91,6 +92,7 @@ export class Analyzer extends Construct {
                 "kafka-cluster:DescribeGroup"
             ],
             resources: [`arn:aws:kafka:${props.region}:${props.account}:group/${props.clusterName}/*`]
+            //Group scope can not be limited as group name is random
         }))
 
         this.taskRole.addToPolicy(new PolicyStatement({
@@ -101,7 +103,11 @@ export class Analyzer extends Construct {
                 "glue:PutSchemaVersionMetadata",
                 "glue:GetSchemaByDefinition"
             ],
-            resources: ['*']
+            resources: [
+                `arn:aws:glue:${props.region}:${props.account}:registry/${props.schemaRegistry.name}`,
+                `arn:aws:glue:${props.region}:${props.account}:schema/*`
+                //Topic scope can not be limited as user defined topics are allowed
+            ]
         }))
 
 
