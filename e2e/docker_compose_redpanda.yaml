@@ -18,7 +18,7 @@ services:
     ports:
       - "9092:9092"
   connect:
-    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.5.0}
+    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.5.1}
     depends_on:
       - kafka
     ports:
