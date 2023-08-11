@@ -32,7 +32,9 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: KafkaEventBridgeSinkStackProps) {
         super(scope, id, props);
 
-        const vpc = new ec2.Vpc(this, 'vpc', )
+        const vpc = new ec2.Vpc(this, 'vpc', {
+            restrictDefaultSecurityGroup: true
+        })
 
         const vpcFlowLogsLogGroup = new logs.LogGroup(this, 'vpcFlowLogs');
 
@@ -189,12 +191,6 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             assumedBy: new iam.ServicePrincipal('kafkaconnect.amazonaws.com')
         })
 
-        const connectorSG = new ec2.SecurityGroup(this, 'connectorSG', {
-            securityGroupName: `mskConnectSecurityGroup-${props.stackName}`,
-            description: 'Security group for Amazon MSK Connect',
-            vpc
-        })
-
 
         if (props.deploymentMode === 'FULL') {
             const connector = new Connector(this, 'connector', {
@@ -204,7 +200,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
                 account: this.account,
                 clusterName: cluster.clusterName,
                 stackName: this.stackName,
-                connectorSG,
+                connectorSG: mskSG,
                 connectorRole,
                 connectorLogGroup
             })

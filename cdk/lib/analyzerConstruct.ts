@@ -106,11 +106,8 @@ export class Analyzer extends Construct {
                 "glue:PutSchemaVersionMetadata",
                 "glue:GetSchemaByDefinition"
             ],
-            resources: [
-                `arn:aws:glue:${props.region}:${props.account}:registry/${props.schemaRegistry.name}`,
-                `arn:aws:glue:${props.region}:${props.account}:schema/*`
-                //Topic scope can not be limited as user defined topics are allowed
-            ]
+            resources: [`*`]
+            //GSR does not work scoped permissions: https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html#schema-registry-gs1b
         }))
 
 
