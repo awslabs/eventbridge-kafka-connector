@@ -408,15 +408,20 @@ retry such a failed `PutEvents` attempt up to `aws.eventbridge.retries.max`. If 
 the retry budget is exhausted, a terminal `ConnectException` is thrown and the task will be stopped.
 
 We recommend to verify your `PutEvents` account quota for the specific AWS
-[region](https://docs.aws.amazon.com/general/latest/gr/ev.html) and adjusting the Kafka Connect worker (consumer)
-setting `consumer.max.poll.records` accordingly. For example, if your `PutEvents` quota is `500`, setting
-`consumer.max.poll.records=400` in the Kafka Connect worker properties leaves enough headroom.
+[region](https://docs.aws.amazon.com/general/latest/gr/ev.html) and adjusting the Kafka Connect sink setting
+`consumer.override.max.poll.records` accordingly. For example, if your `PutEvents` quota is `500`, setting
+`consumer.override.max.poll.records=400` leaves enough headroom.
 
 > **Note**  
-> `consumer.max.poll.interval.ms` is a related setting after which a consumer is considered failed and will leave the
-> consumer group. Continuing the example above, if `consumer.max.poll.records=400` and
-> `consumer.max.poll.interval.ms=300000` (the default as of Kafka 3.5), it means that processing `400` records is
-> allowed to take up to 5 minutes, i.e., 750 milliseconds per record/event, before considering the consumer (task)
+> The EventBridge `PutEvents` quota is an account-level soft quota, i.e., it applies to the sum of all `PutEvents`
+> requests in the same account, such as running multiple tasks of this connector. If you need to increase the quota
+> beyond the hard limit, reach out to the EventBridge service team to better understand your use case and needs.
+
+> **Note**  
+> `consumer.override.max.poll.interval.ms` is a related setting after which a consumer is considered failed and will
+> leave the consumer group. Continuing the example above, if `consumer.override.max.poll.records=400` and
+> `consumer.override.max.poll.interval.ms=300000` (the default as of Kafka 3.5), it means that processing `400` records
+> is allowed to take up to 5 minutes, i.e., 750 milliseconds per record/event, before considering the consumer (task)
 > failed.
 
 ### Payloads exceeding `PutEvents` Limit
