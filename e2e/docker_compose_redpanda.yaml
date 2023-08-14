@@ -14,7 +14,7 @@ services:
       - --memory 1G
       - --mode dev-container
       # - --default-log-level=debug
-    image: docker.redpanda.com/redpandadata/redpanda:v23.1.12
+    image: docker.redpanda.com/redpandadata/redpanda:v23.2.5
     ports:
       - "9092:9092"
   connect:
