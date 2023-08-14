@@ -23,7 +23,7 @@
         <aws.schema.registry.version>1.1.15</aws.schema.registry.version>
         <ch.qos.logback.version>1.4.8</ch.qos.logback.version>
         <com.fasterxml.jackson.version>2.15.2</com.fasterxml.jackson.version>
-        <com.google.guava.version>32.1.1-jre</com.google.guava.version>
+        <com.google.guava.version>32.1.2-jre</com.google.guava.version>
         <commons-codec.version>1.16.0</commons-codec.version>
         <commons-logging.version>1.2</commons-logging.version>
         <connect.api.version>3.5.1</connect.api.version>
