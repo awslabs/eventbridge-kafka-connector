@@ -4,18 +4,20 @@
  */
 package software.amazon.event.kafkaconnector.util;
 
-import com.google.common.util.concurrent.AbstractScheduledService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** The StatusReporter is a scheduled task that logs the throughput of the connector */
-public class StatusReporter extends AbstractScheduledService {
+public class StatusReporter {
+
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
   private final Logger log = LoggerFactory.getLogger(StatusReporter.class);
-  private AtomicInteger sentRecords = new AtomicInteger(0);
-  private AtomicInteger totalRecordsSent = new AtomicInteger(0);
+  private final AtomicInteger totalRecordsSent = new AtomicInteger(0);
 
   private final long interval;
   private final TimeUnit timeUnit;
@@ -26,28 +28,24 @@ public class StatusReporter extends AbstractScheduledService {
   }
 
   public void setSentRecords(Integer sentRecords) {
-    this.sentRecords.set(sentRecords);
     this.totalRecordsSent.addAndGet(sentRecords);
   }
 
-  @Override
-  protected void runOneIteration() {
-    log.info("Total records sent={}", totalRecordsSent.get());
-    sentRecords.set(0);
+  public boolean isRunning() {
+    return !scheduler.isTerminated();
   }
 
-  @Override
-  protected void startUp() {
+  public void startAsync() {
     log.info("Starting status reporter");
+    scheduler.scheduleAtFixedRate(
+        () -> log.info("Total records sent={}", totalRecordsSent.get()),
+        interval,
+        interval,
+        timeUnit);
   }
 
-  @Override
-  protected void shutDown() {
+  public void stopAsync() {
     log.info("Stopping status reporter");
-  }
-
-  @Override
-  protected Scheduler scheduler() {
-    return Scheduler.newFixedRateSchedule(0, interval, timeUnit);
+    scheduler.shutdown();
   }
 }
