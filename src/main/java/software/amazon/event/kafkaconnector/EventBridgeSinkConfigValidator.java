@@ -63,6 +63,11 @@ public class EventBridgeSinkConfigValidator {
           validateDetailType(configValue);
           break;
         }
+      case AWS_EVENTBUS_GLOBAL_ENDPOINT_ID_CONFIG:
+        {
+          validateEndpointId(configValue);
+          break;
+        }
     }
   }
 
@@ -123,6 +128,18 @@ public class EventBridgeSinkConfigValidator {
                 configValue.name(), (String) detailType, topicToDetailTypePattern);
           });
     }
+  }
+
+  private static void validateEndpointId(ConfigValue configValue) {
+    var endpointId = (String) configValue.value();
+    // optional parameter
+    if (endpointId == null || endpointId.trim().isBlank()) {
+      return;
+    }
+
+    // https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutEvents.html#API_PutEvents_RequestSyntax
+    var arnPattern = Pattern.compile("^[A-Za-z0-9\\-]+[\\.][A-Za-z0-9\\-]+$");
+    validateValueWithPattern(configValue.name(), endpointId, arnPattern);
   }
 
   private static void validateValueWithPattern(String key, String value, Pattern pattern) {

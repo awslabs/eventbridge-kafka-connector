@@ -96,6 +96,10 @@
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
+            <artifactId>auth-crt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
             <artifactId>aws-crt-client</artifactId>
         </dependency>
         <dependency>
@@ -218,6 +222,12 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
                 <version>${org.testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>auth-crt</artifactId>
+                <version>${aws.java.sdk.version}</version>
+                <scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
