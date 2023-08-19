@@ -144,10 +144,14 @@ public class EventBridgeWriter {
   private Stream<EventBridgeResult<EventBridgeEventId>> sendToEventBridge(
       List<MappedSinkRecord<PutEventsRequestEntry>> items) {
     try {
-      var request =
+      var requestBuilder =
           PutEventsRequest.builder()
-              .entries(items.stream().map(MappedSinkRecord::getValue).collect(toList()))
-              .build();
+              .entries(items.stream().map(MappedSinkRecord::getValue).collect(toList()));
+
+      if (config.endpointID != null && !config.endpointID.isEmpty()) {
+        requestBuilder.endpointId(config.endpointID);
+      }
+      var request = requestBuilder.build();
 
       log.trace("Sending request to EventBridge: {}", request);
       var response = ebClient.putEvents(request).get(SDK_TIMEOUT, MILLISECONDS);

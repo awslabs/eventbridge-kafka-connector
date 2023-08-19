@@ -38,10 +38,19 @@ public class EventBridgeWriterTest {
       new EventBridgeSinkConfig(
           Map.of(
               "aws.eventbridge.retries.max", 10,
-              "aws.eventbridge.connector.id", "someId",
-              "aws.eventbridge.region", "eu-central-1",
-              "aws.eventbridge.eventbus.arn", "something",
-              "aws.eventbridge.detail.types", "my-first-${topic}"));
+              "aws.eventbridge.connector.id", "testConnectorId",
+              "aws.eventbridge.region", "us-east-1",
+              "aws.eventbridge.eventbus.arn", "arn:aws:events:us-east-1:000000000000:event-bus/e2e",
+              "aws.eventbridge.detail.types", "test-${topic}"));
+
+  private final EventBridgeSinkConfig configGlobalEndpoints =
+      new EventBridgeSinkConfig(
+          Map.of(
+              "aws.eventbridge.connector.id", "testConnectorId",
+              "aws.eventbridge.region", "us-east-1",
+              "aws.eventbridge.eventbus.arn", "arn:aws:events:us-east-1:000000000000:event-bus/e2e",
+              "aws.eventbridge.eventbus.global.endpoint.id", "abcd.xyz",
+              "aws.eventbridge.detail.types", "test-${topic}"));
 
   @Mock private EventBridgeAsyncClient eventBridgeAsyncClient;
   @Captor private ArgumentCaptor<PutEventsRequest> putEventsArgumentCaptor;
@@ -176,5 +185,29 @@ public class EventBridgeWriterTest {
     verify(eventBridgeAsyncClient, times(2)).putEvents(putEventsArgumentCaptor.capture());
     verifyNoMoreInteractions(eventBridgeAsyncClient);
     assertThat(putEventsArgumentCaptor.getAllValues()).hasSize(2);
+  }
+
+  @Test
+  public void usesGlobalEndpointId() {
+    var firstResponse =
+        PutEventsResponse.builder()
+            .failedEntryCount(0)
+            .entries(OfPutEventsResultEntry.withIdsIn(rangeClosed(1, 5)))
+            .build();
+
+    when(eventBridgeAsyncClient.putEvents(any(PutEventsRequest.class)))
+        .thenReturn(completedFuture(firstResponse));
+
+    var writer = new EventBridgeWriter(eventBridgeAsyncClient, configGlobalEndpoints);
+    var result = writer.putItems(OfSinkRecord.withIdsIn(rangeClosed(1, 5)));
+
+    assertThat(result)
+        .filteredOn(EventBridgeResult::isSuccess)
+        .map(EventBridgeResult::success)
+        .hasSize(5);
+
+    verify(eventBridgeAsyncClient, times(1)).putEvents(putEventsArgumentCaptor.capture());
+    verifyNoMoreInteractions(eventBridgeAsyncClient);
+    assertThat(putEventsArgumentCaptor.getValue().endpointId()).isEqualTo("abcd.xyz");
   }
 }

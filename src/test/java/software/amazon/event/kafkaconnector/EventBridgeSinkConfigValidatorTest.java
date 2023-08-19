@@ -131,6 +131,28 @@ public class EventBridgeSinkConfigValidatorTest {
   }
 
   @Test
+  public void invalidEndpointId0() {
+    var configValue = new ConfigValue(AWS_EVENTBUS_GLOBAL_ENDPOINT_ID_CONFIG);
+    configValue.value("abcendpoint");
+    assertThrows(
+        ConfigException.class,
+        () -> {
+          EventBridgeSinkConfigValidator.validate(configValue);
+        });
+  }
+
+  @Test
+  public void invalidEndpointId1() {
+    var configValue = new ConfigValue(AWS_EVENTBUS_GLOBAL_ENDPOINT_ID_CONFIG);
+    configValue.value("abc.def.xyz");
+    assertThrows(
+        ConfigException.class,
+        () -> {
+          EventBridgeSinkConfigValidator.validate(configValue);
+        });
+  }
+
+  @Test
   public void invalidRetryValue0() {
     var configValue = new ConfigValue(AWS_RETRIES_CONFIG);
     configValue.value(-1);
@@ -174,6 +196,30 @@ public class EventBridgeSinkConfigValidatorTest {
   public void validDetailTypeSingleWithVariable() {
     var configValue = new ConfigValue(AWS_DETAIL_TYPES_CONFIG);
     configValue.value(List.of("kafka-connect-${topic}"));
+
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @Test
+  public void validEndpointIdNullValue() {
+    var configValue = new ConfigValue(AWS_EVENTBUS_GLOBAL_ENDPOINT_ID_CONFIG);
+    configValue.value(null);
+
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @Test
+  public void validEndpointIdEmptyString() {
+    var configValue = new ConfigValue(AWS_EVENTBUS_GLOBAL_ENDPOINT_ID_CONFIG);
+    configValue.value("");
+
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @Test
+  public void validEndpointId() {
+    var configValue = new ConfigValue(AWS_EVENTBUS_GLOBAL_ENDPOINT_ID_CONFIG);
+    configValue.value("abcde.veo");
 
     EventBridgeSinkConfigValidator.validate(configValue);
   }
