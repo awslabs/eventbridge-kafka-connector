@@ -43,7 +43,7 @@ public class TransactionAnalyzer {
     public static void main(String[] args) {
 
         var sourceTopic = System.getenv().getOrDefault("TOPIC_NAME", "events");
-        var notificationsTopic = System.getenv().getOrDefault("NOTIFICATIONS_TOPIC_NAME", "notifications");
+        var notificationsTopic = System.getenv().getOrDefault("NOTIFICATIONS_TOPIC_NAME", "notificationsTopic");
         var replicationFactor = System.getenv().getOrDefault("REPLICATION_FACTOR", "3");
         var partitionCount = System.getenv().getOrDefault("PARTITION_COUNT", "10");
         var notificationSchemaFile = System.getenv().getOrDefault("NOTIFICATION_SCHEMA_FILE", "notification.avsc");

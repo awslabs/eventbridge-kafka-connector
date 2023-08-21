@@ -5,7 +5,6 @@
 
 import {Construct} from "constructs";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
-import * as ssm from "aws-cdk-lib/aws-ssm";
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import {Compatibility, ContainerImage, LogDriver} from "aws-cdk-lib/aws-ecs";
 import {PolicyStatement, Role, ServicePrincipal} from "aws-cdk-lib/aws-iam";

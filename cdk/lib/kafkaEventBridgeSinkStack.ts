@@ -49,10 +49,6 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             destination: ec2.FlowLogDestination.toCloudWatchLogs(vpcFlowLogsLogGroup, vpcFlowLogRole)
         })
 
-
-
-
-
         const mskSG = new ec2.SecurityGroup(this, 'mskSG', {
             securityGroupName: `mskClusterSecurityGroup-${this.stackName}`,
             description: 'Security group for Amazon MSK cluster',
@@ -191,6 +187,16 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             assumedBy: new iam.ServicePrincipal('kafkaconnect.amazonaws.com')
         })
 
+        notificationTopic.grantRead(transactionAnalyzer.taskRole)
+        eventsTopic.grantRead(transactionAnalyzer.taskRole)
+        schemaRegistryName.grantRead(transactionAnalyzer.taskRole)
+        bootstrapServersParameter.grantRead(transactionAnalyzer.taskRole)
+
+        notificationTopic.grantRead(producer.taskRole)
+        eventsTopic.grantRead(producer.taskRole)
+        schemaRegistryName.grantRead(producer.taskRole)
+        bootstrapServersParameter.grantRead(producer.taskRole)
+
 
         if (props.deploymentMode === 'FULL') {
             const connector = new Connector(this, 'connector', {
@@ -213,7 +219,7 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
 
         connectorRole.addToPolicy(new iam.PolicyStatement({
             actions: ['glue:GetSchemaVersion'],
-            resources: [`arn:aws:glue:${this.region}:${this.account}:*`]
+            resources: [`*`]
         }))
         //Topic scope can not be limited as user defined topics are allowed
 
@@ -247,20 +253,8 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
 
         NagSuppressions.addStackSuppressions(this, [
             {
-                id: 'AwsSolutions-VPC7',
-                reason: 'Not needed, keeping cost low for sample'
-            },
-            {
                 id: 'AwsSolutions-L1',
                 reason: 'AWS custom resources runtime cannot be changed'
-            },
-            {
-                id: 'AwsSolutions-ECS2',
-                reason: 'Not needed, keeping cost low for sample'
-            },
-            {
-                id: 'AwsSolutions-ECS2',
-                reason: 'Not needed, keeping cost low for sample'
             },
             {
                 id: 'AwsSolutions-IAM5',
@@ -269,6 +263,10 @@ export class KafkaEventBridgeSinkStack extends cdk.Stack {
             {
                 id: 'AwsSolutions-IAM4',
                 reason: 'Log Retention Lambda is owned by CDK, Policy cant be changed.'
+            },
+            {
+                id: 'AwsSolutions-S1',
+                reason: 'No bucket for server access logs available'
             }
         ])
     }

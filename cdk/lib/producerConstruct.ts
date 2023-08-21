@@ -114,12 +114,5 @@ export class Producer extends Construct {
             resources: ['*']
         }))
 
-        NagSuppressions.addResourceSuppressions(cluster, [
-            {
-                id: 'AwsSolutions-ECS4',
-                reason: 'Not needed for this sample, keeping cost low'
-            }
-        ])
-
     }
 }
