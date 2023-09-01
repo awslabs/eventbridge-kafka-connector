@@ -7,6 +7,8 @@ RUN mvn -f /usr/src/app/pom.xml clean package
 
 FROM public.ecr.aws/bitnami/java:11
 
-COPY --from=builder /usr/src/app/target/kafkaProducer-1.0.jar /usr/app/kafkaProducer-1.0.jar
+RUN useradd -ms /bin/bash dockeruser
+WORKDIR /home/dockeruser
+COPY --from=builder /usr/src/app/target/kafkaProducer-1.0.jar /home/dockeruser/kafkaProducer-1.0.jar
 
-ENTRYPOINT ["java", "-jar", "/usr/app/kafkaProducer-1.0.jar"]
+ENTRYPOINT ["java", "-jar", "/home/dockeruser/kafkaProducer-1.0.jar"]

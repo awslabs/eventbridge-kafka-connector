@@ -6,7 +6,9 @@ COPY pom.xml /usr/src/app
 RUN mvn -f /usr/src/app/pom.xml clean package
 
 FROM public.ecr.aws/bitnami/java:11
+RUN useradd -ms /bin/bash dockeruser
+WORKDIR /home/dockeruser
 
-COPY --from=builder /usr/src/app/target/transactionAnalyzer-1.0.jar /usr/app/transactionAnalyzer-1.0.jar
+COPY --from=builder /usr/src/app/target/transactionAnalyzer-1.0.jar /home/dockeruser/transactionAnalyzer-1.0.jar
 
-ENTRYPOINT ["java", "-jar", "/usr/app/transactionAnalyzer-1.0.jar"]
+ENTRYPOINT ["java", "-jar", "/home/dockeruser/transactionAnalyzer-1.0.jar"]
