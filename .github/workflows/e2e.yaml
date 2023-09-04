@@ -54,7 +54,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
-        kafka: ["7.4.1"]
+        kafka: ["7.4.1","7.5.0"]
         broker: ["confluent"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
