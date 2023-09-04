@@ -105,7 +105,7 @@ The following minimal configuration configures the connector with default values
 `"json-values-topic"` with record keys as `String` and `JSON` values (without schema), and sending events to the custom
 EventBridge event bus `"kafkabus"` in region `"us-east-1"`.
 
-```yaml
+```json5
 {
     "name": "EventBridgeSink-Json",
     "config": {
@@ -135,7 +135,7 @@ Continuing the example above, the following configuration defines a dead-letter 
 which will be created with an replication factor of `1` if it does not exist. Records which cannot be converted or
 delivered to EventBridge will be sent to this DLQ.
 
-```yaml
+```json5
 {
     "name": "EventBridgeSink-Json",
     "config": {
@@ -162,7 +162,7 @@ customized retry behavior, and IAM-based authentication, and how to deserialize 
 JSON-encoded keys) using [AWS Glue Schema Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html)
 (GSR).
 
-```yaml
+```json5
 {
   "name": "EventBridgeSink-Avro",
   "config": {
@@ -250,7 +250,7 @@ options.
 
 The connector only requires `events:PutEvents` permission as shown in the IAM policy example below.
 
-```yaml
+```json5
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -287,7 +287,7 @@ a custom plugin (connector).
 Below is an example of an event received by an EventBridge target using the minimal JSON configuration described
 [above](#json-encoding).
 
-```yaml
+```json5
 {
     // fields set by EventBridge
     "version": "0",
@@ -329,7 +329,7 @@ The following Rule pattern would match the above event, i.e., any event where:
 - `detail.key` **starts with** `order` and
 - the field `orderItems` **exists** in the `details.value` object
 
-```yaml
+```json5
 {
   "source": ["kafka-connect.my-json-values-connector"],
   "detail": {
