@@ -73,12 +73,12 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
     root.put("offset", record.kafkaOffset());
     root.put("timestamp", record.timestamp());
     root.put("timestampType", record.timestampType().toString());
-    root.putIfAbsent("headers", createHeaderArray(record));
+    root.set("headers", createHeaderArray(record));
 
     if (record.key() == null) {
-      root.putIfAbsent("key", null);
+      root.set("key", null);
     } else {
-      root.putIfAbsent(
+      root.set(
           "key",
           createJSONFromByteArray(
               jsonConverter.fromConnectData(record.topic(), record.keySchema(), record.key())));
@@ -86,9 +86,9 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
 
     // tombstone handling
     if (record.value() == null) {
-      root.putIfAbsent("value", null);
+      root.set("value", null);
     } else {
-      root.putIfAbsent(
+      root.set(
           "value",
           createJSONFromByteArray(
               jsonConverter.fromConnectData(record.topic(), record.valueSchema(), record.value())));
@@ -109,7 +109,7 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
 
     for (Header header : record.headers()) {
       var headerItem = objectMapper.createObjectNode();
-      headerItem.putIfAbsent(
+      headerItem.set(
           header.key(),
           createJSONFromByteArray(
               jsonConverter.fromConnectHeader(
