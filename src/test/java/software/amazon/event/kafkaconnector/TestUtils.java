@@ -7,12 +7,19 @@ package software.amazon.event.kafkaconnector;
 import static java.util.stream.Collectors.toList;
 import static org.apache.kafka.connect.data.Schema.STRING_SCHEMA;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.AppenderBase;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 
 public abstract class TestUtils {
@@ -50,6 +57,53 @@ public abstract class TestUtils {
           .mapToObj(
               id -> PutEventsResultEntry.builder().eventId(String.format("eventId:%d", id)).build())
           .collect(toList());
+    }
+  }
+
+  public static class ListAppender extends AppenderBase<ILoggingEvent> {
+
+    private final Logger logger;
+
+    public ListAppender(final Logger logger) {
+      this.logger = logger;
+    }
+
+    private final List<ILoggingEvent> events = new ArrayList<>();
+
+    @Override
+    protected void append(ILoggingEvent event) {
+      synchronized (this) {
+        events.add(event);
+      }
+    }
+
+    public List<ILoggingEvent> getLoggingEvents() {
+      synchronized (this) {
+        return new ArrayList<>(events);
+      }
+    }
+
+    public void clear() {
+      synchronized (this) {
+        events.clear();
+      }
+    }
+
+    public void detach() {
+      synchronized (this) {
+        logger.detachAppender(this);
+      }
+    }
+
+    public static ListAppender of(Class<?> clazz, Level level) {
+      var logger = (Logger) LoggerFactory.getLogger(clazz);
+      logger.setLevel(level);
+
+      final var appender = new ListAppender(logger);
+      appender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
+
+      logger.addAppender(appender);
+      return appender;
     }
   }
 }
