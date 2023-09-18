@@ -38,14 +38,14 @@ Java Development Kit (JDK 11 or later).
 
 Clone the repo:
 
-```console
+```shell
 git clone https://github.com/awslabs/eventbridge-kafka-connector.git
 cd eventbridge-kafka-connector
 ```
 
 Create JAR artifacts:
 
-```console
+```shell
 mvn clean package -Drevision=$(git describe --tags --always)
 ```
 
@@ -56,7 +56,7 @@ The following steps describe how to clone the repo and perform a clean packaging
 
 Clone the repo:
 
-```console
+```shell
 # clone repo
 git clone https://github.com/awslabs/eventbridge-kafka-connector.git
 cd eventbridge-kafka-connector
@@ -64,7 +64,7 @@ cd eventbridge-kafka-connector
 
 Create JAR artifacts:
 
-```console
+```shell
 docker run --rm -v $(pwd):/src -w /src -it maven:3-eclipse-temurin-11 \
 mvn clean package -Drevision=$(git describe --tags --always)
 ```
@@ -147,7 +147,7 @@ delivered to EventBridge will be sent to this DLQ.
         "aws.eventbridge.region": "us-east-1",
         "key.converter": "org.apache.kafka.connect.storage.StringConverter",
         "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-        "value.converter.schemas.enable": false
+        "value.converter.schemas.enable": false,
         "errors.tolerance":"all",
         "errors.deadletterqueue.topic.name":"json-dlq",
         "errors.deadletterqueue.topic.replication.factor":1
@@ -273,7 +273,7 @@ The connector only requires `events:PutEvents` permission as shown in the IAM po
 
 The connector can be deployed like any Kafka connector e.g., using the Kafka Connect REST API:
 
-```console
+```shell
 curl -i -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://<kafka-connect-api>:<kafka-connect-port>/connectors/ -d @connector_config.json
 ```
 
