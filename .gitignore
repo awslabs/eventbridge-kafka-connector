@@ -52,3 +52,4 @@ docker-compose-local.yml
 gen
 .env
 DS_STORE
+**/*.iml

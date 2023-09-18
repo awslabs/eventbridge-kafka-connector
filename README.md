@@ -147,7 +147,7 @@ delivered to EventBridge will be sent to this DLQ.
         "aws.eventbridge.region": "us-east-1",
         "key.converter": "org.apache.kafka.connect.storage.StringConverter",
         "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-        "value.converter.schemas.enable": false
+        "value.converter.schemas.enable": false,
         "errors.tolerance":"all",
         "errors.deadletterqueue.topic.name":"json-dlq",
         "errors.deadletterqueue.topic.replication.factor":1
