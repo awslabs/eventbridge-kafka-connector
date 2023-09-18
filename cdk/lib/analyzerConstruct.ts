@@ -84,8 +84,8 @@ export class Analyzer extends Construct {
                 "kafka-cluster:WriteData",
                 "kafka-cluster:ReadData"
             ],
-            resources: [`arn:aws:kafka:${props.region}:${props.account}:topic/${props.clusterName}/*`]
             //Topic scope can not be limited as user defined topics are allowed
+            resources: [`arn:aws:kafka:${props.region}:${props.account}:topic/${props.clusterName}/*`]
         }))
 
         this.taskRole.addToPolicy(new PolicyStatement({
@@ -93,8 +93,8 @@ export class Analyzer extends Construct {
                 "kafka-cluster:AlterGroup",
                 "kafka-cluster:DescribeGroup"
             ],
-            resources: [`arn:aws:kafka:${props.region}:${props.account}:group/${props.clusterName}/*`]
             //Group scope can not be limited as group name is random
+            resources: [`arn:aws:kafka:${props.region}:${props.account}:group/${props.clusterName}/*`]
         }))
 
         this.taskRole.addToPolicy(new PolicyStatement({
@@ -105,8 +105,8 @@ export class Analyzer extends Construct {
                 "glue:PutSchemaVersionMetadata",
                 "glue:GetSchemaByDefinition"
             ],
-            resources: [`*`]
             //GSR does not work scoped permissions: https://docs.aws.amazon.com/glue/latest/dg/schema-registry-gs.html#schema-registry-gs1b
+            resources: [`*`]
         }))
 
 

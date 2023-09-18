@@ -66,7 +66,8 @@ def on_delete(event):
     physical_id = event["PhysicalResourceId"]
     logger.info("delete resource with physical id %s" % physical_id)
     connector_active = True
-    while connector_active:
+    retry_count = 0
+    while connector_active & retry_count > 50:
         try:
             response = client.delete_custom_plugin(
                 customPluginArn=physical_id
@@ -74,3 +75,4 @@ def on_delete(event):
             connector_active = False
         except:
             time.sleep(10000) #Wait for 10 seconds to check again if connector is still active
+            retry_count += 1
