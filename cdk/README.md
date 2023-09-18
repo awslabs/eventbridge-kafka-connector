@@ -2,7 +2,8 @@
 
 This CDK stack is sample deployment for the Kafka Connector for Amazon EventBridge. 
 
-> :warning: **This sample is not meant to be deployed to production environments!**
+> **Warning**  
+> This sample is not meant to be deployed to production environments!
 
 ## Overview
 
