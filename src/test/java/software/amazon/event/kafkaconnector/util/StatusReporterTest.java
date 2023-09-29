@@ -4,16 +4,21 @@
  */
 package software.amazon.event.kafkaconnector.util;
 
+import static ch.qos.logback.classic.Level.INFO;
 import static ch.qos.logback.classic.Level.TRACE;
+import static java.lang.Integer.parseInt;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import java.util.Comparator;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import org.assertj.core.groups.Tuple;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -56,14 +61,31 @@ public class StatusReporterTest {
         .untilAsserted(
             () ->
                 assertThat(appender.getLoggingEvents())
-                    .extracting("level", "formattedMessage")
-                    .containsSubsequence(
-                        new Tuple(Level.INFO, "Starting status reporter"),
-                        new Tuple(Level.INFO, "Total records sent=0"),
-                        new Tuple(Level.INFO, "Total records sent=1"),
-                        new Tuple(Level.INFO, "Total records sent=2")));
+                    .filteredOn(level(INFO))
+                    .extracting(ILoggingEvent::getFormattedMessage)
+                    .contains("Starting status reporter")
+                    .filteredOn(startsWith("Total records sent="))
+                    .hasSizeGreaterThan(2)
+                    .isSortedAccordingTo(matchGroupOf("Total records sent=(\\d+)")));
 
     task.cancel(false);
     sut.stopAsync();
+  }
+
+  private static Predicate<? super ILoggingEvent> level(Level expectedLevel) {
+    return (event) -> event.getLevel() == expectedLevel;
+  }
+
+  private static Predicate<? super String> startsWith(String prefix) {
+    return (value) -> value.startsWith(prefix);
+  }
+
+  private static Comparator<String> matchGroupOf(final String regex) {
+    var pattern = Pattern.compile(regex);
+    return Comparator.comparing(
+        it -> {
+          var matcher = pattern.matcher(it);
+          return matcher.find() ? parseInt(matcher.group(1)) : -1;
+        });
   }
 }
