@@ -10,6 +10,12 @@
         "aws.eventbridge.endpoint.uri": "http://localstack:4566",
         "key.converter": "org.apache.kafka.connect.storage.StringConverter",
         "value.converter": "org.apache.kafka.connect.json.JsonConverter",
-        "value.converter.schemas.enable": false
+        "value.converter.schemas.enable": false,
+        "consumer.override.interceptor.classes": "software.amazon.event.kafkaconnector.EventBridgeSinkInterceptor",
+        "consumer.override.aws.eventbridge.value": "json",
+        "consumer.override.aws.eventbridge.s3.threshold_bytes": "16",
+        "consumer.override.aws.eventbridge.s3.bucket_name": "example",
+        "consumer.override.aws.eventbridge.s3.region": "us-east-1",
+        "consumer.override.aws.eventbridge.s3.endpoint.uri": "http://localstack:4566"
     }
 }
