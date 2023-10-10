@@ -35,7 +35,7 @@
         <org.junit.jupiter.version>5.10.0</org.junit.jupiter.version>
         <org.mockito.version>5.6.0</org.mockito.version>
         <org.slf4j.version>2.0.9</org.slf4j.version>
-        <org.testcontainers.version>1.19.0</org.testcontainers.version>
+        <org.testcontainers.version>1.19.1</org.testcontainers.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
