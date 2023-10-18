@@ -2,7 +2,7 @@ version: "3"
 
 services:
   kafka:
-    image: confluentinc/cp-kafka:${KAFKA_VERSION:-7.5.0}
+    image: confluentinc/cp-kafka:${KAFKA_VERSION:-7.5.1}
     ports:
       - "9092:9092"
       - "9101:9101"
@@ -27,7 +27,7 @@ services:
       CLUSTER_ID: "MkU3OEVBNTcwXTJENDM3Pk"
 
   connect:
-    image: confluentinc/cp-kafka-connect:${KAFKA_VERSION:-7.5.0}
+    image: confluentinc/cp-kafka-connect:${KAFKA_VERSION:-7.5.1}
     depends_on:
       - kafka
     ports:
@@ -46,7 +46,7 @@ services:
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       # CLASSPATH required due to CC-2422
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-${KAFKA_VERSION:-7.5.0}.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-${KAFKA_VERSION:-7.5.1}.jar
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components,/usr/local/share/java/connect"
@@ -58,7 +58,7 @@ services:
       - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
 
   localstack:
-    image: localstack/localstack:2.3.1
+    image: localstack/localstack:2.3.2
     ports:
       - "4566:4566" # LocalStack Gateway
       - "4510-4559:4510-4559" # external services port range

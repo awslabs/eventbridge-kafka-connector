@@ -2,7 +2,7 @@ version: "3"
 
 services:
   kafka:
-    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.5.1}
+    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.6.0}
     ports:
       - "9092:9092"
     environment:
@@ -21,7 +21,7 @@ services:
     volumes:
       - ${PWD}/log4j.properties:/opt/bitnami/kafka/config/log4j.properties
   connect:
-    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.5.1}
+    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.6.0}
     depends_on:
       - kafka
     ports:
@@ -36,7 +36,7 @@ services:
       - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
     command: ["/bin/bash","-c","env && /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties"]
   localstack:
-    image: localstack/localstack:2.3.1
+    image: localstack/localstack:2.3.2
     ports:
       - "4566:4566" # LocalStack Gateway
       - "4510-4559:4510-4559" # external services port range
