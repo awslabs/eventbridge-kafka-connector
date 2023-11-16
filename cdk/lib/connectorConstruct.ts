@@ -107,10 +107,10 @@ export class Connector extends Construct {
         //Set AWS Account ID and AWS region in connector configuration
         const connectorConfiguration = JSON.parse(JSON
             .stringify(connectorConfig)
-            .replace("00000000000", props.account)
-            .replace("us-east-1", props.region)
-            .replace('/default', '/eventbridge-sink-eventbus')
-            .replace('default-registry', 'streaming')
+            .replaceAll("00000000000", props.account)
+            .replaceAll("us-east-1", props.region)
+            .replaceAll('/default', '/eventbridge-sink-eventbus')
+            .replaceAll('default-registry', 'streaming')
         )
 
 
