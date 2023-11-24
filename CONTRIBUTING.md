@@ -140,20 +140,20 @@ Change the JSON configuration example `connect-config.json` (uses LocalStack def
 environment. In a separate terminal (within the `e2e` folder) deploy the connector:
 
 ```bash
-curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @connect-config.json
+curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://$(docker-compose -f docker_compose.yaml port connect 8083)/connectors/ -d @connect-config.json
 ```
 
 The output should look like:
 
 ```bash
 HTTP/1.1 201 Created
-Date: Tue, 04 Jul 2023 09:35:48 GMT
-Location: http://localhost:8083/connectors/eventbridge-e2e
+Date: Fri, 24 Nov 2023 14:11:22 GMT
+Location: http://0.0.0.0:32816/connectors/eventbridge-e2e
 Content-Type: application/json
-Content-Length: 636
-Server: Jetty(9.4.51.v20230217)
+Content-Length: 688
+Server: Jetty(9.4.52.v20230823)
 
-{"name":"eventbridge-e2e","config":{"auto.offset.reset":"earliest","connector.class":"software.amazon.event.kafkaconnector.EventBridgeSinkConnector","topics":"eventbridge-e2e","aws.eventbridge.connector.id":"eventbridge-e2e-connector","aws.eventbridge.eventbus.arn":"arn:aws:events:us-east-1:1234567890:event-bus/eventbridge-e2e","aws.eventbridge.region":"us-east-1","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.json.JsonConverter","value.converter.schemas.enable":"false","name":"eventbridge-e2e"},"tasks":[{"connector":"eventbridge-e2e","task":0}],"type":"sink"}
+{"name":"eventbridge-e2e","config":{"auto.offset.reset":"earliest","connector.class":"software.amazon.event.kafkaconnector.EventBridgeSinkConnector","topics":"eventbridge-e2e","aws.eventbridge.connector.id":"eventbridge-e2e-connector","aws.eventbridge.eventbus.arn":"arn:aws:events:us-east-1:000000000000:event-bus/eventbridge-e2e","aws.eventbridge.region":"us-east-1","aws.eventbridge.endpoint.uri":"http://localstack:4566","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.json.JsonConverter","value.converter.schemas.enable":"false","name":"eventbridge-e2e"},"tasks":[{"connector":"eventbridge-e2e","task":0}],"type":"sink"}
 ```
 
 Before proceeding, verify that the Docker Compose logs do not show any errors, such as `WARN`, `ERROR`, or `FATAL` log
@@ -168,7 +168,7 @@ Produce a Kafka record to invoke the EventBridge sink connector:
 
 ```bash
 # open a shell in the Kafka broker container
-docker exec -it -w /opt/bitnami/kafka/bin e2e-kafka-1 /bin/bash
+docker-compose -f docker_compose.yaml exec -w /opt/bitnami/kafka/bin kafka /bin/bash
 
 # produce an event
 # replace the topic with your connector settings if needed

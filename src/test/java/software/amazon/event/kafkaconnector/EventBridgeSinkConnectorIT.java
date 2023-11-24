@@ -4,6 +4,9 @@
  */
 package software.amazon.event.kafkaconnector;
 
+import static java.net.http.HttpClient.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,6 +21,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,7 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -46,90 +52,92 @@ import software.amazon.awssdk.services.sqs.model.*;
 import software.amazon.awssdk.utils.ImmutableMap;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Testcontainers
 public class EventBridgeSinkConnectorIT {
   //  environment variables
   private static final String COMPOSE_FILE_ENV = "COMPOSE_FILE";
   private static final String KAFKA_VERSION_ENV = "KAFKA_VERSION";
 
+  private static final String CONNECT_SERVICE = "connect_1";
+  private static final int CONNECT_EXPOSED_SERVICE_PORT = 8083;
+
+  private static final String LOCALSTACK_SERVICE = "localstack_1";
+  private static final int LOCALSTACK_EXPOSED_SERVICE_PORT = 4566;
+
   // (@embano1): hardcoding ports here is a bit of a hack, but it's the easiest way to
   // allow direct invocation of docker-compose with fixed ports
-  private static final URI LOCALSTACK_ENDPOINT = URI.create("http://localhost:4566");
   private static final String BOOTSTRAP_SERVER = "localhost:9092";
   private static final String RUNNING_STATE = "RUNNING";
   private static final String CONNECTOR_CONFIG_LOCATION = "e2e/connect-config.json";
 
+  private static final String AWS_ACCESS_KEY_ID = "test";
+  private static final String AWS_SECRET_ACCESS_KEY = "test";
+
   private static final String TEST_RESOURCE_NAME = "eventbridge-e2e";
   private static final String TEST_EVENT_KEY = "eventbridge-e2e";
 
-  private final Logger log = LoggerFactory.getLogger(EventBridgeSinkConnectorIT.class);
+  private static final Logger log = LoggerFactory.getLogger(EventBridgeSinkConnectorIT.class);
 
-  private DockerComposeContainer environment;
-  private SqsClient sqsClient;
-  private String KafkaVersion;
-  private File ComposeFile;
-  private HttpClient HttpClient;
-
-  @BeforeAll
-  public void setup() {
-    KafkaVersion = System.getenv(KAFKA_VERSION_ENV);
-    if (KafkaVersion == null || KafkaVersion.isEmpty()) {
-      fail(KAFKA_VERSION_ENV + " environment variable must be set");
-    }
-
-    var ComposeFileLocation = System.getenv(COMPOSE_FILE_ENV);
-    if (ComposeFileLocation == null || ComposeFileLocation.isEmpty()) {
+  private static File getComposeFile() {
+    var filename = System.getenv(COMPOSE_FILE_ENV);
+    if (filename == null || filename.trim().isEmpty()) {
       fail(COMPOSE_FILE_ENV + " environment variable must be set");
     }
-
-    ComposeFile = new File(ComposeFileLocation);
-    HttpClient =
-        java.net.http.HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
-
-    startDockerComposeEnvironment();
-    createAwsResources();
+    return new File(filename);
   }
 
-  @AfterAll
-  public void cleanup() {
-    environment.stop();
-  }
-
-  private void startDockerComposeEnvironment() {
-    log.info(
-        "starting docker compose environment: kafka_version={} docker_compose_file={}",
-        KafkaVersion,
-        ComposeFile.toString());
-    try {
-      environment =
-          new DockerComposeContainer("e2e", ComposeFile)
-              .withLogConsumer("connect", new Slf4jLogConsumer(log).withSeparateOutputStreams())
-              .withEnv("AWS_ACCESS_KEY_ID", "test")
-              .withEnv("AWS_SECRET_ACCESS_KEY", "test")
-              .withEnv(KAFKA_VERSION_ENV, KafkaVersion)
-              .withExposedService("connect_1", 8083)
-              .withExposedService("localstack_1", 4566)
-              .waitingFor("connect_1", new HttpWaitStrategy().forPort(8083))
-              .waitingFor("localstack_1", new HttpWaitStrategy().forPort(4566));
-      environment.start();
-    } catch (Exception e) {
-      fail("failed to run docker compose environment: " + e.getMessage());
+  private static String getKafkaVersion() {
+    var version = System.getenv(KAFKA_VERSION_ENV);
+    if (version == null || version.trim().isEmpty()) {
+      fail(KAFKA_VERSION_ENV + " environment variable must be set");
     }
+    return version;
   }
 
-  private void createAwsResources() {
+  @Container
+  private static final DockerComposeContainer<?> environment =
+      new DockerComposeContainer<>("e2e", getComposeFile())
+          .withLogConsumer("connect", new Slf4jLogConsumer(log).withSeparateOutputStreams())
+          .withEnv("AWS_ACCESS_KEY_ID", AWS_ACCESS_KEY_ID)
+          .withEnv("AWS_SECRET_ACCESS_KEY", AWS_SECRET_ACCESS_KEY)
+          .withEnv(KAFKA_VERSION_ENV, getKafkaVersion())
+          .withExposedService(
+              CONNECT_SERVICE, CONNECT_EXPOSED_SERVICE_PORT, Wait.forListeningPort())
+          .withExposedService(
+              LOCALSTACK_SERVICE, LOCALSTACK_EXPOSED_SERVICE_PORT, Wait.forListeningPort());
+
+  private SqsClient sqsClient;
+  private HttpClient httpClient;
+
+  private URI getLocalstackEndpoint() {
+    var port = environment.getServicePort(LOCALSTACK_SERVICE, LOCALSTACK_EXPOSED_SERVICE_PORT);
+    return URI.create("http://localhost:" + port);
+  }
+
+  private URI buildKafkaConnectURI(String path) {
+    var port = environment.getServicePort(CONNECT_SERVICE, CONNECT_EXPOSED_SERVICE_PORT);
+    return URI.create("http://localhost:" + port + path);
+  }
+
+  @BeforeAll
+  public void createAwsResources() {
     log.info("creating aws localstack resources");
-    var credentials = StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"));
+    var credentials =
+        StaticCredentialsProvider.create(
+            AwsBasicCredentials.create(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY));
+
+    httpClient = newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
 
     sqsClient =
         SqsClient.builder()
-            .endpointOverride(LOCALSTACK_ENDPOINT)
+            .endpointOverride(getLocalstackEndpoint())
             .credentialsProvider(credentials)
             .region(Region.US_EAST_1)
             .build();
 
     var ebClient =
         EventBridgeClient.builder()
-            .endpointOverride(LOCALSTACK_ENDPOINT)
+            .endpointOverride(getLocalstackEndpoint())
             .credentialsProvider(credentials)
             .region(Region.US_EAST_1)
             .build();
@@ -174,17 +182,17 @@ public class EventBridgeSinkConnectorIT {
     try {
       var request =
           HttpRequest.newBuilder()
-              .uri(new URI("http://localhost:8083/connectors/"))
+              .uri(buildKafkaConnectURI("/connectors/"))
               .POST(HttpRequest.BodyPublishers.ofFile(Path.of(CONNECTOR_CONFIG_LOCATION)))
               .setHeader("Accept", "application/json")
               .setHeader("Content-Type", "application/json")
               .build();
 
-      var response = HttpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
       log.info("kafka connect response {}", response);
 
       var statusCode = response.statusCode();
-      Assertions.assertTrue(statusCode >= 200 && statusCode <= 299);
+      assertTrue(statusCode >= 200 && statusCode <= 299);
     } catch (Exception e) {
       fail("could not create connector", e);
     }
@@ -196,11 +204,11 @@ public class EventBridgeSinkConnectorIT {
               log.info("waiting for eventbridge sink connector to enter {} state", RUNNING_STATE);
               var statusRequest =
                   HttpRequest.newBuilder()
-                      .uri(new URI("http://localhost:8083/connectors/eventbridge-e2e/status"))
+                      .uri(buildKafkaConnectURI("/connectors/eventbridge-e2e/status"))
                       .setHeader("Accept", "application/json")
                       .build();
 
-              var response = HttpClient.send(statusRequest, HttpResponse.BodyHandlers.ofString());
+              var response = httpClient.send(statusRequest, HttpResponse.BodyHandlers.ofString());
               return response.body().contains(RUNNING_STATE);
             });
     log.info("eventbridge sink connector entered {} state", RUNNING_STATE);
@@ -209,7 +217,8 @@ public class EventBridgeSinkConnectorIT {
   @Test
   public void sendJsonRecordToKafkaReceiveFromSQS() {
     log.info("creating kafka producer");
-    var producerConfig =
+
+    final Map<String, Object> producerConfig =
         ImmutableMap.of(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
             BOOTSTRAP_SERVER,
@@ -219,8 +228,9 @@ public class EventBridgeSinkConnectorIT {
             "all",
             ProducerConfig.RETRIES_CONFIG,
             2);
-    KafkaProducer producer =
-        new KafkaProducer(producerConfig, new StringSerializer(), new JsonSerializer());
+
+    var producer =
+        new KafkaProducer<>(producerConfig, new StringSerializer(), new JsonSerializer());
 
     var mapper = new ObjectMapper();
 
@@ -256,7 +266,7 @@ public class EventBridgeSinkConnectorIT {
                           .build());
 
               List<Message> messages = receiveMessageResponse.messages();
-              Assertions.assertEquals(1, messages.size());
+              assertEquals(1, messages.size());
 
               var messageBody = messages.get(0).body();
               log.info("received sqs message body: {}", messageBody);
@@ -266,11 +276,11 @@ public class EventBridgeSinkConnectorIT {
               gotMessageDetailValue.set(detailValue);
             });
 
-    Assertions.assertTrue(gotMessageDetailValue.get().path("partition").asInt(-1) >= 0);
-    Assertions.assertTrue(gotMessageDetailValue.get().path("offset").asInt(-1) >= 0);
-    Assertions.assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("topic").asText(""));
-    Assertions.assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("key").asText(""));
-    Assertions.assertEquals(jsonTestEvent, gotMessageDetailValue.get().path("value"));
+    assertTrue(gotMessageDetailValue.get().path("partition").asInt(-1) >= 0);
+    assertTrue(gotMessageDetailValue.get().path("offset").asInt(-1) >= 0);
+    assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("topic").asText(""));
+    assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("key").asText(""));
+    assertEquals(jsonTestEvent, gotMessageDetailValue.get().path("value"));
   }
 
   private String getQueueUrl() {
