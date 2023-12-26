@@ -4,10 +4,16 @@
  */
 package software.amazon.event.kafkaconnector;
 
+import static software.amazon.awssdk.core.SdkSystemSetting.AWS_ACCESS_KEY_ID;
+import static software.amazon.awssdk.core.SdkSystemSetting.AWS_SECRET_ACCESS_KEY;
+import static software.amazon.awssdk.core.SdkSystemSetting.AWS_SESSION_TOKEN;
+import static software.amazon.awssdk.profiles.ProfileFileSystemSetting.AWS_PROFILE;
 import static software.amazon.event.kafkaconnector.EventBridgeSinkConfig.*;
 
 import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
@@ -18,6 +24,12 @@ import software.amazon.awssdk.regions.RegionMetadata;
 
 public class EventBridgeSinkConfigValidator {
 
+  @FunctionalInterface
+  // for unit testing to mock environment variables
+  interface EnvVarGetter {
+    String get(String name);
+  }
+
   private static final Logger log = LoggerFactory.getLogger(EventBridgeSinkConfigValidator.class);
 
   public static void validate(Config config) {
@@ -27,6 +39,10 @@ public class EventBridgeSinkConfigValidator {
   }
 
   public static void validate(ConfigValue configValue) {
+    validate(configValue, System::getenv);
+  }
+
+  public static void validate(ConfigValue configValue, EnvVarGetter getenv) {
     switch (configValue.name()) {
       case AWS_CONNECTOR_ID_CONFIG:
         {
@@ -66,6 +82,12 @@ public class EventBridgeSinkConfigValidator {
       case AWS_EVENTBUS_GLOBAL_ENDPOINT_ID_CONFIG:
         {
           validateEndpointId(configValue);
+          break;
+        }
+
+      case AWS_PROFILE_NAME_CONFIG:
+        {
+          validateProfileName(configValue, getenv);
           break;
         }
     }
@@ -140,6 +162,30 @@ public class EventBridgeSinkConfigValidator {
     // https://docs.aws.amazon.com/eventbridge/latest/APIReference/API_PutEvents.html#API_PutEvents_RequestSyntax
     var arnPattern = Pattern.compile("^[A-Za-z0-9\\-]+[\\.][A-Za-z0-9\\-]+$");
     validateValueWithPattern(configValue.name(), endpointId, arnPattern);
+  }
+
+  private static void validateProfileName(ConfigValue configValue, EnvVarGetter envVarGetter) {
+    var profileName = (String) configValue.value();
+    // optional parameter
+    if (profileName == null || profileName.trim().isBlank()) {
+      return;
+    }
+
+    // throw if this config parameter and any AWS environment variables which overwrite its behavior
+    // (from DefaultCredentialsProvider chain) are set
+    var conflictingAwsEnvVars =
+        Stream.of(AWS_PROFILE, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, AWS_ACCESS_KEY_ID)
+            .map(Enum::toString)
+            .filter(env -> (envVarGetter.get(env) != null))
+            .collect(Collectors.toList());
+
+    if (!conflictingAwsEnvVars.isEmpty()) {
+      throw new ConfigException(
+          String.format(
+              "\"%s\" environment variable(s) are set. "
+                  + "Unset the environment variable for \"%s\" to take effect.",
+              conflictingAwsEnvVars, AWS_PROFILE_NAME_CONFIG));
+    }
   }
 
   private static void validateValueWithPattern(String key, String value, Pattern pattern) {
