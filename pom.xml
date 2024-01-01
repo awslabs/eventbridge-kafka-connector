@@ -28,7 +28,7 @@
         <connect.api.version>3.6.1</connect.api.version>
         <joda-time.version>2.12.5</joda-time.version>
         <org.apache.commons.version>3.14.0</org.apache.commons.version>
-        <org.assertj.version>3.24.2</org.assertj.version>
+        <org.assertj.version>3.25.0</org.assertj.version>
         <org.awaitility.version>4.2.0</org.awaitility.version>
         <org.hamcrest.version>2.2</org.hamcrest.version>
         <org.jacoco.version>0.8.11</org.jacoco.version>
