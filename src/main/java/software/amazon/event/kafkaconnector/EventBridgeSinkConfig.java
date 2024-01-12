@@ -12,7 +12,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 
 public class EventBridgeSinkConfig extends AbstractConfig {
 
@@ -73,7 +73,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   public final List<String> resources;
   public final int maxRetries;
   public final long retriesDelay;
-  private final Logger log = LoggerFactory.getLogger(EventBridgeSinkConfig.class);
+  private final Logger log = ContextAwareLoggerFactory.getLogger(EventBridgeSinkConfig.class);
   private Map<String, String> detailTypeByTopic;
   private String detailType;
 
