@@ -27,6 +27,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
       "aws.eventbridge.eventbus.global.endpoint.id";
   static final String AWS_RETRIES_CONFIG = "aws.eventbridge.retries.max";
   static final String AWS_RETRIES_DELAY_CONFIG = "aws.eventbridge.retries.delay";
+  static final String AWS_PROFILE_NAME_CONFIG = "aws.eventbridge.iam.profile.name";
   static final String AWS_ROLE_ARN_CONFIG = "aws.eventbridge.iam.role.arn";
   static final String AWS_ROLE_EXTERNAL_ID_CONFIG = "aws.eventbridge.iam.external.id";
   static final String AWS_DETAIL_TYPES_CONFIG = "aws.eventbridge.detail.types";
@@ -48,6 +49,8 @@ public class EventBridgeSinkConfig extends AbstractConfig {
           + "If not specified, AWS default credentials provider is used";
   private static final String AWS_ROLE_EXTERNAL_ID_CONFIG_DOC =
       "The IAM external id (optional) when role-based authentication is used";
+  private static final String AWS_PROFILE_NAME_CONFIG_DOC =
+      "The profile to use from the configuration and credentials files to retrieve IAM credentials";
   private static final String AWS_DETAIL_TYPES_DEFAULT = "kafka-connect-${topic}";
   private static final String AWS_DETAIL_TYPES_DOC =
       "The detail-type that will be used for the EventBridge events. "
@@ -66,6 +69,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   public final String endpointURI;
   public final String roleArn;
   public final String externalId;
+  public final String profileName;
   public final List<String> resources;
   public final int maxRetries;
   public final long retriesDelay;
@@ -82,6 +86,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
     this.endpointURI = getString(AWS_ENDPOINT_URI_CONFIG);
     this.roleArn = getString(AWS_ROLE_ARN_CONFIG);
     this.externalId = getString(AWS_ROLE_EXTERNAL_ID_CONFIG);
+    this.profileName = getString(AWS_PROFILE_NAME_CONFIG);
     this.maxRetries = getInt(AWS_RETRIES_CONFIG);
     this.retriesDelay = getInt(AWS_RETRIES_DELAY_CONFIG);
     this.resources = getList(AWS_EVENTBUS_RESOURCES_CONFIG);
@@ -137,6 +142,9 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         "",
         Importance.MEDIUM,
         AWS_ROLE_EXTERNAL_ID_CONFIG_DOC);
+    configDef.define(
+        AWS_PROFILE_NAME_CONFIG, Type.STRING, "", Importance.MEDIUM, AWS_PROFILE_NAME_CONFIG_DOC);
+    ;
     configDef.define(
         AWS_RETRIES_CONFIG, Type.INT, AWS_RETRIES_DEFAULT, Importance.MEDIUM, AWS_RETRIES_DOC);
     configDef.define(

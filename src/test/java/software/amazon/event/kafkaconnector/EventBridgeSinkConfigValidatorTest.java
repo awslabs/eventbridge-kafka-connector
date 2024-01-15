@@ -5,8 +5,12 @@
 package software.amazon.event.kafkaconnector;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static software.amazon.awssdk.core.SdkSystemSetting.AWS_ACCESS_KEY_ID;
+import static software.amazon.awssdk.core.SdkSystemSetting.AWS_SECRET_ACCESS_KEY;
+import static software.amazon.awssdk.profiles.ProfileFileSystemSetting.AWS_PROFILE;
 import static software.amazon.event.kafkaconnector.EventBridgeSinkConfig.*;
 
+import java.util.HashMap;
 import java.util.List;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
@@ -225,7 +229,71 @@ public class EventBridgeSinkConfigValidatorTest {
   }
 
   @Test
-  public void invalidConfiguration() {
+  public void invalidProfileNameConfigWithAwsProfileEnvSet() {
+    var configValue = new ConfigValue(AWS_PROFILE_NAME_CONFIG);
+    configValue.value("testprofile");
+
+    var envMock =
+        new HashMap<String, String>() {
+          {
+            put(AWS_PROFILE.toString(), "testenvprofilevalue");
+          }
+        };
+
+    assertThrows(
+        ConfigException.class,
+        () -> {
+          EventBridgeSinkConfigValidator.validate(configValue, envMock::get);
+        });
+  }
+
+  @Test
+  public void invalidProfileNameConfigWithAwsCredentialsEnvSet() {
+    var configValue = new ConfigValue(AWS_PROFILE_NAME_CONFIG);
+    configValue.value("testprofile");
+
+    var envMock =
+        new HashMap<String, String>() {
+          {
+            // omitting optional AWS_SESSION_TOKEN in this test
+            put(AWS_ACCESS_KEY_ID.toString(), "testkey");
+            put(AWS_SECRET_ACCESS_KEY.toString(), "testkey");
+          }
+        };
+
+    assertThrows(
+        ConfigException.class,
+        () -> {
+          EventBridgeSinkConfigValidator.validate(configValue, envMock::get);
+        });
+  }
+
+  @Test
+  public void validProfileNameConfigWithNoEnvSet() {
+    var configValue = new ConfigValue(AWS_PROFILE_NAME_CONFIG);
+    configValue.value("testprofile");
+
+    var envMock = new HashMap<String, String>();
+    EventBridgeSinkConfigValidator.validate(configValue, envMock::get);
+  }
+
+  @Test
+  public void validProfileNameEmptyStringWithAwsCredentials() {
+    var configValue = new ConfigValue(AWS_PROFILE_NAME_CONFIG);
+    configValue.value("");
+
+    var envMock =
+        new HashMap<String, String>() {
+          {
+            put(AWS_ACCESS_KEY_ID.toString(), "testkey");
+            put(AWS_SECRET_ACCESS_KEY.toString(), "testkey");
+          }
+        };
+    EventBridgeSinkConfigValidator.validate(configValue, envMock::get);
+  }
+
+  @Test
+  public void invalidDetailTypes() {
     var configValue = new ConfigValue(AWS_DETAIL_TYPES_CONFIG);
     configValue.value(List.of("kafka-connect:test", "something", "else"));
 

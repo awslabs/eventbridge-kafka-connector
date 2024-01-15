@@ -33,8 +33,8 @@ public class EventBridgeCredentialsProvider {
    */
   public static AwsCredentialsProvider getCredentials(EventBridgeSinkConfig config) {
     if (config.roleArn.trim().isBlank()) {
-      log.info("Using aws default credentials provider: role arn not set");
-      return DefaultCredentialsProvider.create();
+      log.info("Using aws default credentials provider");
+      return getDefaultCredentialsProvider(config);
     }
 
     log.info(
@@ -44,6 +44,23 @@ public class EventBridgeCredentialsProvider {
         config.connectorId,
         config.externalId,
         stsRefreshDuration);
+    return getStsAssumeRoleCredentialsProvider(config);
+  }
+
+  private static DefaultCredentialsProvider getDefaultCredentialsProvider(
+      EventBridgeSinkConfig config) {
+    var builder = DefaultCredentialsProvider.builder();
+
+    var profileName = config.profileName;
+    if (!profileName.isBlank()) {
+      builder.profileName(profileName);
+    }
+
+    return builder.build();
+  }
+
+  private static StsAssumeRoleCredentialsProvider getStsAssumeRoleCredentialsProvider(
+      EventBridgeSinkConfig config) {
     var stsClient = StsClient.builder().region(Region.of(config.region)).build();
     var requestBuilder =
         AssumeRoleRequest.builder()

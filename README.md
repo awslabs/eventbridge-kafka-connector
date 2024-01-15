@@ -5,10 +5,16 @@
 
 
 This Kafka *sink* connector for Amazon EventBridge allows you to send events (records) from one or multiple Kafka
-topic(s) to the specified event bus, including useful features such as configurable topic to event `detail-type` name
-mapping, IAM role-based authentication, support for [dead-letter
-queues](https://kafka.apache.org/documentation/#sinkconnectorconfigs_errors.deadletterqueue.topic.name), and schema
-registry support for Avro and Protocol Buffers (Protobuf). See [configuration](#configuration) below for details.
+topic(s) to the specified event bus, including useful features such as:
+
+- configurable topic to event `detail-type` name mapping
+- custom IAM profiles per connector
+- IAM role-based authentication
+- support for [dead-letter
+queues](https://kafka.apache.org/documentation/#sinkconnectorconfigs_errors.deadletterqueue.topic.name)
+- and schema registry support for Avro and Protocol Buffers (Protobuf). 
+
+See [configuration](#configuration) below for details.
 
 Amazon EventBridge event buses is a serverless event router that enables you to create scalable event-driven
 applications by routing events between your own applications, third-party SaaS applications, and other AWS services. You
@@ -69,7 +75,7 @@ docker run --rm -v $(pwd):/src -w /src -it maven:3-eclipse-temurin-11 \
 mvn clean package -Drevision=$(git describe --tags --always)
 ```
 
-> **Note**  
+> [!TIP]
 > If you want to reuse your local Maven cache and/or persist the Maven dependencies pulled, add  
 > `-v <local_maven_folder>:/root/.m2 ` to the above command.
 
@@ -79,7 +85,7 @@ In addition to the common Kafka Connect [sink-related](https://kafka.apache.org/
 configuration options, this connector defines the following configuration properties.
 
 | Property                                      | Required | Default                    | Description                                                                                                                                                                                                                                                                                                                                                  |
-|-----------------------------------------------|----------|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------------------------------- | -------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `aws.eventbridge.connector.id`                | **Yes**  |                            | The unique ID of this connector (used in the EventBridge event `source` field as a suffix on `kafka-connect.` to uniquely identify a connector).                                                                                                                                                                                                             |
 | `aws.eventbridge.region`                      | **Yes**  |                            | The AWS region of the target event bus.                                                                                                                                                                                                                                                                                                                      |
 | `aws.eventbridge.endpoint.uri`                | No       |                            | An optional [service endpoint](https://docs.aws.amazon.com/general/latest/gr/ev.html) URI used to connect to EventBridge.                                                                                                                                                                                                                                    |
@@ -89,10 +95,11 @@ configuration options, this connector defines the following configuration proper
 | `aws.eventbridge.detail.types`                | No       | `"kafka-connect-${topic}"` | The `detail-type` that will be used for the EventBridge events. Can be defined per topic e.g., `"topic1:MyDetailType, topic2:MyDetailType"`, as a single expression with a dynamic `${topic}` placeholder for all topics e.g., `"my-detail-type-${topic}"` or as a static value without additional topic information for all topics e.g, `"my-detail-type"`. |
 | `aws.eventbridge.retries.max`                 | No       | `2`                        | The maximum number of retry attempts when sending events to EventBridge.                                                                                                                                                                                                                                                                                     |
 | `aws.eventbridge.retries.delay`               | No       | `200`                      | The retry delay in milliseconds between each retry attempt.                                                                                                                                                                                                                                                                                                  |
+| `aws.eventbridge.iam.profile.name`            | No       |                            | Use the specified IAM profile to resolve credentials See [Using different Configuration Profiles per Connector](#using-different-configuration-profiles-per-connector) for details                                                                                                                                                                           |
 | `aws.eventbridge.iam.role.arn`                | No       |                            | Uses [STS](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html) to assume the specified IAM role with periodic refresh. The connector ID is used as the session name.                                                                                                                                                                  |
 | `aws.eventbridge.iam.external.id`             | No       |                            | The IAM external id (optional) when role-based authentication is used.                                                                                                                                                                                                                                                                                       |
 
-> **Note**  
+> [!NOTE]
 > When using the default retry configuration (or retries > 0), the connector provides *at-least-once* delivery semantics
 > for **valid** Kafka records, i.e., records which can be correctly (de)serialized before making a delivery attempt to
 > EventBridge.
@@ -124,7 +131,7 @@ EventBridge event bus `"kafkabus"` in region `"us-east-1"`.
 }
 ```
 
-> **Note**  
+> [!NOTE]
 > Currently, when using `JsonConverter` for keys or values, the connector uses a fixed configuration
 > `schemas.enable=false`, i.e., JSON schemas are not included in the outgoing EventBridge event.
 
@@ -194,7 +201,7 @@ JSON-encoded keys) using [AWS Glue Schema Registry](https://docs.aws.amazon.com/
 }
 ```
 
-> **Note**   
+> [!IMPORTANT]
 > This connector does not include custom (de)serializers, such as `AWSKafkaAvroConverter` as shown above. Refer to the
 > Kafka Connect, schema registry (e.g.
 > [GSR](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-apache-kafka-connect)),
@@ -226,10 +233,10 @@ values can be configured (see [configuration](#configuration)). The following ex
 considered retryable: `AwsServiceException`, `SdkClientException`, `ExecutionException`, `InterruptedException`,
 `TimeoutException`. 
 
-> **Note**  
+> [!NOTE]
 > `EventBridgeException`s with a `413` status code (`PutEventsRequestEntry` limit exceeded) are not retried.
 
-> **Note**   
+> [!NOTE] 
 > The setting `aws.eventbridge.retries.max` is also used on the underlying AWS SDK client, which automatically handles
 > certain retryable errors, such as throttling, without immediately throwing an exception. Currently, this can lead to
 > more than the desired retry attempts since those exceptions are also considered retryable by the connector code.
@@ -238,17 +245,27 @@ considered retryable: `AwsServiceException`, `SdkClientException`, `ExecutionExc
 
 #### Authentication (IAM Credentials)
 
-Each connector task creates an EventBridge client using either the AWS
+Each connector task creates an EventBridge client using the AWS
 [DefaultCredentialsProvider](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/auth/credentials/DefaultCredentialsProvider.html)
-to look up credentials e.g., from the environment, or the
+to look up credentials. AWS credential providers use a predefined configuration and configuration
+[order](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-chain.html#credentials-default) to
+retrieve credentials from the various credential [sources](https://docs.aws.amazon.com/sdkref/latest/guide/access.html).
+
+For example, you can provide (temporary) credentials to the connector using `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN` environment variables. For information how to use AWS `config` and
+`credentials` profiles to resolve credentials, see [Using different Configuration Profiles per Connector](#using-different-configuration-profiles-per-connector).
+
+When the configuration property `“aws.eventbridge.iam.role.arn”` is set, the
 [StsAssumeRoleCredentialsProvider](https://sdk.amazonaws.com/java/api/latest/software/amazon/awssdk/services/sts/auth/StsAssumeRoleCredentialsProvider.html)
-if the configuration property `“aws.eventbridge.iam.role.arn”` is set. Alternatively, the [MSK Config
-Providers](https://github.com/aws-samples/msk-config-providers) project can be used for additional authentication
-options.
+is directly used to assume the specified IAM role and periodically refresh credentials with STS. The STS client uses the
+configured `region` of the connector for the STS client and retrieves credentials using the `DefaultCredentialsProvider`
+retrieval chain described above.
 
-#### Permissions (IAM Policy)
+#### Required Connector Permissions to send events to EventBridge (IAM Policy)
 
-The connector only requires `events:PutEvents` permission as shown in the IAM policy example below.
+The connector only requires `events:PutEvents` permission as shown in the IAM policy example below. For details refer to
+the "Managing access permissions to your Amazon EventBridge resources"
+[documentation](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-manage-iam-access.html).
 
 ```json5
 {
@@ -258,16 +275,79 @@ The connector only requires `events:PutEvents` permission as shown in the IAM po
             "Sid": "AllowPutEventsKafkaConnector",
             "Effect": "Allow",
             "Action": "events:PutEvents",
-            "Resource": "arn:aws:events:us-east-1:1234567890:event-bus/kafkabus"
+            "Resource": "<ARN of your event bus>"
         }
     ]
 }
 ```
 
-> **Note**  
+> [!IMPORTANT]
 > If you use the Glue Schema Registry, the IAM role needs additional permissions to retrieve schemas e.g.,
 > using the managed policy `AWSGlueSchemaRegistryReadonlyAccess`. Please refer to the Glue Schema Registry
 > [documentation](https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html).
+
+#### Using different Configuration Profiles per Connector
+
+If you run multiple EventBridge connectors in your Kafka Connect environment, using environment variables or Java system
+properties to configure your connectors means that each connector will be configured **with the same IAM permissions**.
+If you want to configure multiple connectors with specific (different) IAM profiles from your `config` and `credentials`
+files, the connector configuration option `aws.eventbridge.iam.profile.name` can be used.
+
+With the connector configuration option `aws.eventbridge.iam.profile.name` you specify which profile the specific
+connector will use. 
+
+> [!IMPORTANT]
+> Environment variables, such as `AWS_PROFILE` or AWS access keys always take precedence over the configuration
+> files and **must not** be set for this configuration option to take effect.
+
+Steps to configure a connector with a configuration profile:
+
+First, set `"aws.eventbridge.iam.profile.name": "my-custom-profile"` in the connector JSON configuration file (replace
+example values with your desired profile name). Then, create (or mount) the AWS `config` and `credentials` files in your
+Kafka Connect host(s). If the configuration files are not located/mounted in the [default
+location](https://docs.aws.amazon.com/sdkref/latest/guide/file-location.html), set the environment variables
+`AWS_CONFIG_FILE` and `AWS_SHARED_CREDENTIALS_FILE` accordingly. For example, with Docker you can mount them from your
+local machine using Docker volume mounts and environment variables (see example below).
+
+##### Docker Compose Example for a custom profile "my-custom-profile"
+
+`config` file:
+
+```ini
+[profile my-custom-profile]
+output=text # not used by the SDK, for illustration purposes
+```
+
+`credentials` file:
+
+```ini
+[my-custom-profile]
+aws_access_key_id=AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+aws_session_token = IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZ2luX2IQoJb3JpZVERYLONGSTRINGEXAMPLE
+```
+
+Docker Compose file (snippet):
+
+```yaml
+  connect:
+    # (snip)
+    environment:
+      AWS_CONFIG_FILE: '/aws/config'
+      AWS_SHARED_CREDENTIALS_FILE: '/aws/credentials'
+    volumes:
+      - /Users/example/.aws:/aws # mount credentials from local host to /aws folder
+```
+
+You can also use role-based authentication with this approach by referencing a `source_profile` in the `config` file:
+
+`config` file (role-based authentication):
+
+```ini
+[profile my-custom-profile]
+role_arn = arn:aws:iam::0123456789:role/KafkaConnectorPutEvents
+source_profile = default # assume role using credentials using from the default profile specified in the credentials file
+```
 
 ## Deployment to Kafka Connect
 
@@ -277,7 +357,7 @@ The connector can be deployed like any Kafka connector e.g., using the Kafka Con
 curl -i -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://<kafka-connect-api>:<kafka-connect-port>/connectors/ -d @connector_config.json
 ```
 
-> **Note**   
+> [!IMPORTANT] 
 > On Amazon Managed Streaming for Apache Kafka (MSK), follow the official
 > [documentation](https://docs.aws.amazon.com/msk/latest/developerguide/msk-connect-getting-started.html) how to create
 a custom plugin (connector).
@@ -341,7 +421,7 @@ The following Rule pattern would match the above event, i.e., any event where:
 }
 ```
 
-> **Note**  
+> [!TIP]
 > Consult the EventBridge event patterns
 > [documentation](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-event-patterns.html) for a complete
 > explanation of available patterns.
@@ -413,12 +493,12 @@ We recommend to verify your `PutEvents` account quota for the specific AWS
 `consumer.override.max.poll.records` accordingly. For example, if your `PutEvents` quota is `500`, setting
 `consumer.override.max.poll.records=400` leaves enough headroom.
 
-> **Note**  
+> [!NOTE] 
 > The EventBridge `PutEvents` quota is an account-level soft quota, i.e., it applies to the sum of all `PutEvents`
 > requests in the same account, such as running multiple tasks of this connector. If you need to increase the quota
 > beyond the hard limit, reach out to the EventBridge service team to better understand your use case and needs.
 
-> **Note**  
+> [!NOTE] 
 > `consumer.override.max.poll.interval.ms` is a related setting after which a consumer is considered failed and will
 > leave the consumer group. Continuing the example above, if `consumer.override.max.poll.records=400` and
 > `consumer.override.max.poll.interval.ms=300000` (the default as of Kafka 3.5), it means that processing `400` records
@@ -447,7 +527,7 @@ calls e.g.:
 [2023-05-25 11:53:04,598] INFO [EventBridgeSink-Json|task-0] Total records sent=15 (software.amazon.event.kafkaconnector.util.StatusReporter:36)
 ```
 
-> **Note**  
+> [!TIP]
 > Depending on your Kafka Connect environment, you can enable `[EventBridgeSink-Json|task-0]` logging style using this environment variable in Kafka Connect `CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"`
 
 By enabling `TRACE`-level logging, the connector will emit additional log messages, such as the underlying AWS SDK

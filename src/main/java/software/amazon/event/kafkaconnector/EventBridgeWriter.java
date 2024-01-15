@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +63,6 @@ public class EventBridgeWriter {
    * @param config Configuration of Sink Client (AWS Region, Eventbus ARN etc.)
    */
   public EventBridgeWriter(EventBridgeSinkConfig config) {
-
     this.config = config;
 
     var endpointUri =
@@ -85,23 +85,34 @@ public class EventBridgeWriter {
             .putAdvancedOption(USER_AGENT_PREFIX, userAgentPrefix)
             .build();
 
+    var credentialsProvider = EventBridgeCredentialsProvider.getCredentials(config);
+
     var client =
         EventBridgeAsyncClient.builder()
             .region(Region.of(this.config.region))
             .endpointOverride(endpointUri)
             .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
             .overrideConfiguration(clientConfig)
-            .credentialsProvider(EventBridgeCredentialsProvider.getCredentials(config))
+            .credentialsProvider(credentialsProvider)
             .build();
 
     this.ebClient = client;
 
     this.eventBridgeMapper = new DefaultEventBridgeMapper(config);
     this.batching = new DefaultEventBridgeBatching();
+
     log.trace(
         "EventBridgeWriter client config: {}",
         ReflectionToStringBuilder.toString(
             client.serviceClientConfiguration(), ToStringStyle.DEFAULT_STYLE, true));
+
+    // fail fast if credentials cannot be resolved
+    log.info("Resolving iam credentials");
+    try {
+      credentialsProvider.resolveCredentials();
+    } catch (Exception e) {
+      throw new ConnectException(e);
+    }
   }
 
   /**
