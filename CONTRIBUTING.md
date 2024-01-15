@@ -218,6 +218,25 @@ To tear down the environment run:
 docker-compose -f docker_compose.yaml down --remove-orphans -v
 ```
 
+##### Remote Debug the Connector
+
+If you need to debug the connector then update the used `docker_compose{_(confluent|redpanda)}.yaml` by uncommenting:
+```yaml
+services:
+  connect:
+    image: …
+    depends_on: …
+    ports:
+      - "8083"
+      - "5005:5005"
+    environment:
+      # …
+      KAFKA_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    volumes:
+      - …
+```
+The port for JVM debugging is `5005` which can be changed with the shown port mapping configuration e.g., `"9000:5005"` to use port `9000` instead with your debugging tool. Use your favorite JVM debugging tool and start remote debugging. Do not forget to deploy the connector (see steps above).
+
 ## Finding contributions to work on
 Looking at the existing issues is a great way to find something to contribute on. As our projects, by default, use the default GitHub issue labels (enhancement/bug/duplicate/help wanted/invalid/question/wontfix), looking at any 'help wanted' issues is a great place to start.
 

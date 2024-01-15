@@ -27,10 +27,12 @@ services:
       - kafka
     ports:
       - "8083"
+      # - "5005:5005"
     environment:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      # KAFKA_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     volumes:
       - ${PWD}/connect-standalone.properties:/opt/bitnami/kafka/config/connect-standalone.properties
       - ${PWD}/connect-log4j.properties:/opt/bitnami/kafka/config/connect-log4j.properties
