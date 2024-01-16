@@ -11,7 +11,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static software.amazon.event.kafkaconnector.TestUtils.toFixedGitCommitId;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -64,11 +63,10 @@ public class StatusReporterTest {
                 assertThat(appender.getLoggingEvents())
                     .filteredOn(level(INFO))
                     .extracting(ILoggingEvent::getFormattedMessage)
-                    .map(toFixedGitCommitId)
-                    .contains("[GitCommitId] Starting status reporter")
-                    .filteredOn(startsWith("[GitCommitId] Total records sent="))
+                    .contains("Starting status reporter")
+                    .filteredOn(startsWith("Total records sent="))
                     .hasSizeGreaterThan(2)
-                    .isSortedAccordingTo(matchGroupOf("[GitCommitId] Total records sent=(\\d+)")));
+                    .isSortedAccordingTo(matchGroupOf("Total records sent=(\\d+)")));
 
     task.cancel(false);
     sut.stopAsync();

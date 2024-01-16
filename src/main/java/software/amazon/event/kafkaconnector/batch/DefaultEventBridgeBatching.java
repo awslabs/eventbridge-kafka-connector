@@ -17,8 +17,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
 
 /**
@@ -45,8 +45,7 @@ import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
  */
 public class DefaultEventBridgeBatching implements EventBridgeBatchingStrategy {
 
-  private static final Logger logger =
-      ContextAwareLoggerFactory.getLogger(DefaultEventBridgeBatching.class);
+  private static final Logger logger = LoggerFactory.getLogger(DefaultEventBridgeBatching.class);
 
   private final Collector<
           MappedSinkRecord<PutEventsRequestEntry>,

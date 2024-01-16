@@ -7,11 +7,11 @@ package software.amazon.event.kafkaconnector.util;
 import java.io.InputStream;
 import java.util.Properties;
 import org.slf4j.Logger;
-import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
+import org.slf4j.LoggerFactory;
 
 public class PropertiesUtil {
 
-  private static final Logger log = ContextAwareLoggerFactory.getLogger(PropertiesUtil.class);
+  private static final Logger log = LoggerFactory.getLogger(PropertiesUtil.class);
 
   private static final String CONNECTOR_VERSION = "connector.version";
   private static final String CONNECTOR_NAME = "connector.name";

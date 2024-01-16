@@ -21,15 +21,15 @@ import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.event.kafkaconnector.exceptions.EventBridgePartialFailureResponse;
-import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
 import software.amazon.event.kafkaconnector.util.PropertiesUtil;
 import software.amazon.event.kafkaconnector.util.StatusReporter;
 
 public class EventBridgeSinkTask extends SinkTask {
 
-  private final Logger log = ContextAwareLoggerFactory.getLogger(EventBridgeSinkTask.class);
+  private final Logger log = LoggerFactory.getLogger(EventBridgeSinkTask.class);
   private EventBridgeWriter eventBridgeWriter;
   private ErrantRecordReporter dlq;
   private EventBridgeSinkConfig config;

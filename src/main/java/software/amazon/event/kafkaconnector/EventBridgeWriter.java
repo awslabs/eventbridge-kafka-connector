@@ -25,6 +25,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -42,7 +43,6 @@ import software.amazon.awssdk.utils.StringUtils;
 import software.amazon.event.kafkaconnector.auth.EventBridgeCredentialsProvider;
 import software.amazon.event.kafkaconnector.batch.DefaultEventBridgeBatching;
 import software.amazon.event.kafkaconnector.batch.EventBridgeBatchingStrategy;
-import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 import software.amazon.event.kafkaconnector.mapping.DefaultEventBridgeMapper;
 import software.amazon.event.kafkaconnector.mapping.EventBridgeMapper;
 import software.amazon.event.kafkaconnector.util.EventBridgeEventId;
@@ -52,7 +52,7 @@ import software.amazon.event.kafkaconnector.util.PropertiesUtil;
 public class EventBridgeWriter {
 
   private static final int SDK_TIMEOUT = 5000; // timeout in milliseconds for SDK calls
-  private static final Logger log = ContextAwareLoggerFactory.getLogger(EventBridgeWriter.class);
+  private static final Logger log = LoggerFactory.getLogger(EventBridgeWriter.class);
 
   private final EventBridgeSinkConfig config;
   private final EventBridgeAsyncClient ebClient;

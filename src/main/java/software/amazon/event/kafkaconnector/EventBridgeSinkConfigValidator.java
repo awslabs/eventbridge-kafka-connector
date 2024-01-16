@@ -17,6 +17,8 @@ import java.util.stream.Stream;
 import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.RegionMetadata;
 
@@ -27,6 +29,8 @@ public class EventBridgeSinkConfigValidator {
   interface EnvVarGetter {
     String get(String name);
   }
+
+  private static final Logger log = LoggerFactory.getLogger(EventBridgeSinkConfigValidator.class);
 
   public static void validate(Config config) {
     config.configValues().stream()
