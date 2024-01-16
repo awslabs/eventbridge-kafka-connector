@@ -513,8 +513,8 @@ ignore (skip) over the record. Optionally, a dead-letter topic can be
 [configured](#json-encoding-with-dead-letter-queue) where such records are sent to.
 
 ```console
-[2023-05-26 09:01:21,149] WARN [EventBridgeSink-Json|task-0] Marking record as failed: code=413 message=EventBridge batch size limit exceeded topic=json-test partition=0 offset=0 (software.amazon.event.kafkaconnector.EventBridgeWriter:244)
-[2023-05-26 09:01:21,149] WARN [EventBridgeSink-Json|task-0] Dead-letter queue not configured: skipping failed record (software.amazon.event.kafkaconnector.EventBridgeSinkTask:147)
+[2023-05-26 09:01:21,149] WARN [EventBridgeSink-Json|task-0] [@69c7029] Marking record as failed: code=413 message=EventBridge batch size limit exceeded topic=json-test partition=0 offset=0 (software.amazon.event.kafkaconnector.EventBridgeWriter:244)
+[2023-05-26 09:01:21,149] WARN [EventBridgeSink-Json|task-0] [@69c7029] Dead-letter queue not configured: skipping failed record (software.amazon.event.kafkaconnector.EventBridgeSinkTask:147)
 software.amazon.event.kafkaconnector.exceptions.EventBridgePartialFailureResponse: statusCode=413 errorMessage=EventBridge batch size limit exceeded topic=json-test partition=0 offset=0
 ```
 
@@ -534,11 +534,11 @@ By enabling `TRACE`-level logging, the connector will emit additional log messag
 client configuration, records received from Kafka Connect, `PutEvents` stats, such as start, end time and duration, etc.
 
 ```console
-[2023-05-25 12:01:56,882] TRACE [EventBridgeSink-Json|task-0] EventBridgeSinkTask put called with 1 records: [SinkRecord{kafkaOffset=0, timestampType=CreateTime} ConnectRecord{topic='json-test', kafkaPartition=0, key=my-key, keySchema=Schema{STRING}, value={sentTime=Thu May 25 14:01:56 CEST 2023}, valueSchema=null, timestamp=1685016116860, headers=ConnectHeaders(headers=)}] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:57)
-[2023-05-25 12:01:56,889] TRACE [EventBridgeSink-Json|task-0] EventBridgeSinkTask putItems call started: start=2023-05-25T12:01:56.889640Z attempts=1 maxRetries=0 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:77)
-[2023-05-25 12:01:56,909] TRACE [EventBridgeSink-Json|task-0] EventBridgeWriter sending request to eventbridge: PutEventsRequest(Entries=[PutEventsRequestEntry(Source=kafka-connect.json-test-connector, Resources=[], DetailType=kafka-connect-json-test, Detail={"topic":"json-test","partition":0,"offset":0,"timestamp":1685016116860,"timestampType":"CreateTime","headers":[],"key":"my-key","value":{"sentTime":"Thu May 25 14:01:56 CEST 2023"}}, EventBusName=arn:aws:events:us-east-1:1234567890:event-bus/kafkabus)]) (software.amazon.event.kafkaconnector.EventBridgeWriter:140)
-[2023-05-25 12:01:57,242] TRACE [EventBridgeSink-Json|task-0] EventBridgeWriter putEvents response: [PutEventsResultEntry(EventId=875b7f21-f098-8b55-ea7a-a4d235079bfb)] (software.amazon.event.kafkaconnector.EventBridgeWriter:142)
-[2023-05-25 12:01:57,242] TRACE [EventBridgeSink-Json|task-0] EventBridgeSinkTask putItems call completed: start=2023-05-25T12:01:56.889640Z completion=2023-05-25T12:01:57.242428Z durationMillis=352 attempts=1 maxRetries=0 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:99)
+[2023-05-25 12:01:56,882] TRACE [EventBridgeSink-Json|task-0] [@69c7029] EventBridgeSinkTask put called with 1 records: [SinkRecord{kafkaOffset=0, timestampType=CreateTime} ConnectRecord{topic='json-test', kafkaPartition=0, key=my-key, keySchema=Schema{STRING}, value={sentTime=Thu May 25 14:01:56 CEST 2023}, valueSchema=null, timestamp=1685016116860, headers=ConnectHeaders(headers=)}] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:57)
+[2023-05-25 12:01:56,889] TRACE [EventBridgeSink-Json|task-0] [@69c7029] EventBridgeSinkTask putItems call started: start=2023-05-25T12:01:56.889640Z attempts=1 maxRetries=0 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:77)
+[2023-05-25 12:01:56,909] TRACE [EventBridgeSink-Json|task-0] [@69c7029] EventBridgeWriter sending request to eventbridge: PutEventsRequest(Entries=[PutEventsRequestEntry(Source=kafka-connect.json-test-connector, Resources=[], DetailType=kafka-connect-json-test, Detail={"topic":"json-test","partition":0,"offset":0,"timestamp":1685016116860,"timestampType":"CreateTime","headers":[],"key":"my-key","value":{"sentTime":"Thu May 25 14:01:56 CEST 2023"}}, EventBusName=arn:aws:events:us-east-1:1234567890:event-bus/kafkabus)]) (software.amazon.event.kafkaconnector.EventBridgeWriter:140)
+[2023-05-25 12:01:57,242] TRACE [EventBridgeSink-Json|task-0] [@69c7029] EventBridgeWriter putEvents response: [PutEventsResultEntry(EventId=875b7f21-f098-8b55-ea7a-a4d235079bfb)] (software.amazon.event.kafkaconnector.EventBridgeWriter:142)
+[2023-05-25 12:01:57,242] TRACE [EventBridgeSink-Json|task-0] [@69c7029] EventBridgeSinkTask putItems call completed: start=2023-05-25T12:01:56.889640Z completion=2023-05-25T12:01:57.242428Z durationMillis=352 attempts=1 maxRetries=0 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:99)
 ```
 
 Depending on your Kafka Connect environment, you can enable `TRACE`-level logging via environment variables on Kafka

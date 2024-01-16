@@ -160,8 +160,8 @@ Before proceeding, verify that the Docker Compose logs do not show any errors, s
 entries. You should see logs like:
 
 ```bash
-e2e-connect-1     | [2023-07-04 09:35:59,034] TRACE [eventbridge-e2e|task-0] EventBridgeSinkTask put called with 0 records: [] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:68)
-e2e-connect-1     | [2023-07-04 09:35:59,035] TRACE [eventbridge-e2e|task-0] Returning early: 0 records received (software.amazon.event.kafkaconnector.EventBridgeSinkTask:70)
+e2e-connect-1     | [2023-07-04 09:35:59,034] TRACE [eventbridge-e2e|task-0] [@69c7029] EventBridgeSinkTask put called with 0 records: [] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:68)
+e2e-connect-1     | [2023-07-04 09:35:59,035] TRACE [eventbridge-e2e|task-0] [@69c7029] Returning early: 0 records received (software.amazon.event.kafkaconnector.EventBridgeSinkTask:70)
 ```
 
 Produce a Kafka record to invoke the EventBridge sink connector: 
@@ -178,11 +178,11 @@ echo -n '{"hello":"world"}' | ./kafka-console-producer.sh --bootstrap-server kaf
 The Docker Compose logs output should look like:
 
 ```console
-e2e-connect-1     | [2023-07-04 09:54:55,824] TRACE [eventbridge-e2e|task-0] EventBridgeSinkTask put called with 1 records: [SinkRecord{kafkaOffset=1, timestampType=CreateTime} ConnectRecord{topic='eventbridge-e2e', kafkaPartition=0, key=null, keySchema=Schema{STRING}, value={hello=world}, valueSchema=null, timestamp=1688464495808, headers=ConnectHeaders(headers=)}] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:68)
-e2e-connect-1     | [2023-07-04 09:54:55,824] TRACE [eventbridge-e2e|task-0] putItems call started: start=2023-07-04T09:54:55.824953210Z attempts=1 maxRetries=2 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:81)
-e2e-connect-1     | [2023-07-04 09:54:55,825] TRACE [eventbridge-e2e|task-0] Sending request to EventBridge: PutEventsRequest(Entries=[PutEventsRequestEntry(Source=kafka-connect.eventbridge-e2e-connector, Resources=[], DetailType=kafka-connect-eventbridge-e2e, Detail={"topic":"eventbridge-e2e","partition":0,"offset":0,"timestamp":1688464495808,"timestampType":"CreateTime","headers":[],"key":null,"value":{"hello":"world"}}, EventBusName=arn:aws:events:us-east-1:1234567890:event-bus/eventbridge-e2e)]) (software.amazon.event.kafkaconnector.EventBridgeWriter:152)
-e2e-connect-1     | [2023-07-04 09:54:56,100] TRACE [eventbridge-e2e|task-0] putEvents response: [PutEventsResultEntry(EventId=29725ba0-c013-9457-0be2-51ba26708d3d)] (software.amazon.event.kafkaconnector.EventBridgeWriter:154)
-e2e-connect-1     | [2023-07-04 09:54:56,301] TRACE [eventbridge-e2e|task-0] putItems call completed: start=2023-07-04T09:54:55.824953210Z completion=2023-07-04T09:54:56.301049627Z durationMillis=476 attempts=1 maxRetries=2 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:105)
+e2e-connect-1     | [2023-07-04 09:54:55,824] TRACE [eventbridge-e2e|task-0] [@69c7029] EventBridgeSinkTask put called with 1 records: [SinkRecord{kafkaOffset=1, timestampType=CreateTime} ConnectRecord{topic='eventbridge-e2e', kafkaPartition=0, key=null, keySchema=Schema{STRING}, value={hello=world}, valueSchema=null, timestamp=1688464495808, headers=ConnectHeaders(headers=)}] (software.amazon.event.kafkaconnector.EventBridgeSinkTask:68)
+e2e-connect-1     | [2023-07-04 09:54:55,824] TRACE [eventbridge-e2e|task-0] [@69c7029] putItems call started: start=2023-07-04T09:54:55.824953210Z attempts=1 maxRetries=2 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:81)
+e2e-connect-1     | [2023-07-04 09:54:55,825] TRACE [eventbridge-e2e|task-0] [@69c7029] Sending request to EventBridge: PutEventsRequest(Entries=[PutEventsRequestEntry(Source=kafka-connect.eventbridge-e2e-connector, Resources=[], DetailType=kafka-connect-eventbridge-e2e, Detail={"topic":"eventbridge-e2e","partition":0,"offset":0,"timestamp":1688464495808,"timestampType":"CreateTime","headers":[],"key":null,"value":{"hello":"world"}}, EventBusName=arn:aws:events:us-east-1:1234567890:event-bus/eventbridge-e2e)]) (software.amazon.event.kafkaconnector.EventBridgeWriter:152)
+e2e-connect-1     | [2023-07-04 09:54:56,100] TRACE [eventbridge-e2e|task-0] [@69c7029] putEvents response: [PutEventsResultEntry(EventId=29725ba0-c013-9457-0be2-51ba26708d3d)] (software.amazon.event.kafkaconnector.EventBridgeWriter:154)
+e2e-connect-1     | [2023-07-04 09:54:56,301] TRACE [eventbridge-e2e|task-0] [@69c7029] putItems call completed: start=2023-07-04T09:54:55.824953210Z completion=2023-07-04T09:54:56.301049627Z durationMillis=476 attempts=1 maxRetries=2 (software.amazon.event.kafkaconnector.EventBridgeSinkTask:105)
 ```
 
 The output event should look similar to the below:

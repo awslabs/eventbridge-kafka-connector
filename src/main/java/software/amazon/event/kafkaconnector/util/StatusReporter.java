@@ -9,14 +9,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 
 /** The StatusReporter is a scheduled task that logs the throughput of the connector */
 public class StatusReporter {
 
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-  private final Logger log = LoggerFactory.getLogger(StatusReporter.class);
+  private final Logger log = ContextAwareLoggerFactory.getLogger(StatusReporter.class);
   private final AtomicInteger totalRecordsSent = new AtomicInteger(0);
 
   private final long interval;
