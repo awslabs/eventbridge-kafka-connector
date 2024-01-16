@@ -14,7 +14,6 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
@@ -28,9 +27,6 @@ public abstract class TestUtils {
   private TestUtils() {}
 
   public static final Schema testSchema = SchemaBuilder.struct().field("id", STRING_SCHEMA).build();
-
-  public static final Function<String, String> toFixedGitCommitId =
-      it -> it.replaceAll("\\[@[0-9a-f]+(-dirty)?]", "[GitCommitId]");
 
   public abstract static class OfSinkRecord {
 

@@ -5,6 +5,7 @@
 package software.amazon.event.kafkaconnector.auth;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -12,14 +13,12 @@ import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.event.kafkaconnector.EventBridgeSinkConfig;
-import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 
 /** IAMUtility offers convenience functions for creating AWS IAM credential providers. */
 public class EventBridgeCredentialsProvider {
 
   private static final int stsRefreshDuration = 900; // min allowed value
-  private static final Logger log =
-      ContextAwareLoggerFactory.getLogger(EventBridgeCredentialsProvider.class);
+  private static final Logger log = LoggerFactory.getLogger(EventBridgeCredentialsProvider.class);
 
   /**
    * Create an IAM credentials provider.
