@@ -11,6 +11,7 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.kafka.connect.data.Schema.STRING_SCHEMA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static software.amazon.event.kafkaconnector.TestUtils.toFixedGitCommitId;
 import static software.amazon.event.kafkaconnector.batch.DefaultEventBridgeBatching.getSize;
 
 import ch.qos.logback.classic.Logger;
@@ -192,8 +193,9 @@ class DefaultEventBridgeBatchingTest {
     assertThat(strategy.apply(records)).isNotEmpty();
     assertThat(loggingEvents)
         .extracting(Object::toString)
+        .map(toFixedGitCommitId)
         .contains(
-            "[WARN] Item for SinkRecord with topic='topic', partition=0 and offset=0 exceeds EventBridge size limit. Size is 262145 bytes.");
+            "[WARN] [GitCommitId] Item for SinkRecord with topic='topic', partition=0 and offset=0 exceeds EventBridge size limit. Size is 262145 bytes.");
   }
 
   @Test
