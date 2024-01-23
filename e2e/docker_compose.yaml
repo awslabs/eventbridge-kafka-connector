@@ -2,7 +2,7 @@ version: "3"
 
 services:
   kafka:
-    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.6.1}
+    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.6.1-debian-11-r1}
     ports:
       - "9092:9092"
     environment:
@@ -22,7 +22,7 @@ services:
       - ${PWD}/log4j.properties:/opt/bitnami/kafka/config/log4j.properties
 
   connect:
-    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.6.1}
+    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.6.1-debian-11-r1}
     depends_on:
       - kafka
     ports:
