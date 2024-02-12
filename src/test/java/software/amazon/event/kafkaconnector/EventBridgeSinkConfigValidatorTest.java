@@ -319,7 +319,7 @@ public class EventBridgeSinkConfigValidatorTest {
   @Test
   public void validTopicDetailTypeMapperClass() {
     var configValue = new ConfigValue(AWS_DETAIL_TYPES_MAPPER_CLASS);
-    configValue.value("software.amazon.event.kafkaconnector.mapping.DefaultTopicDetailTypeMapper");
+    configValue.value("software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper");
     EventBridgeSinkConfigValidator.validate(configValue);
   }
 }

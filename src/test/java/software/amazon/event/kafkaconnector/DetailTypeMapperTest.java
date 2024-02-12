@@ -9,8 +9,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Map;
-
-import net.bytebuddy.build.Plugin;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.junit.jupiter.api.Test;
 import software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper;
@@ -45,7 +43,9 @@ public class DetailTypeMapperTest {
     var detailTypeMapper = new DefaultDetailTypeMapper();
     detailTypeMapper.configure(new EventBridgeSinkConfig(myConfig));
 
-    assertThat(detailTypeMapper.getDetailType(createSinkRecordWithTopic("something")), is("my-first-something"));
+    assertThat(
+        detailTypeMapper.getDetailType(createSinkRecordWithTopic("something")),
+        is("my-first-something"));
   }
 
   @Test
@@ -60,8 +60,10 @@ public class DetailTypeMapperTest {
     var detailTypeMapper = new DefaultDetailTypeMapper();
     detailTypeMapper.configure(new EventBridgeSinkConfig(myConfig));
 
-    assertThat(detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic1")), is("something"));
-    assertThat(detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic2")), is("something-else"));
+    assertThat(
+        detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic1")), is("something"));
+    assertThat(
+        detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic2")), is("something-else"));
   }
 
   @Test
@@ -76,7 +78,9 @@ public class DetailTypeMapperTest {
     var detailTypeMapper = new DefaultDetailTypeMapper();
     detailTypeMapper.configure(new EventBridgeSinkConfig(myConfig));
 
-    assertThat(detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic3")), is("kafka-connect-topic3"));
+    assertThat(
+        detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic3")),
+        is("kafka-connect-topic3"));
   }
 
   @Test
@@ -91,8 +95,11 @@ public class DetailTypeMapperTest {
     var detailTypeMapper = new DefaultDetailTypeMapper();
     detailTypeMapper.configure(new EventBridgeSinkConfig(myConfig));
 
-    assertThat(detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic1")), is("something"));
-    assertThat(detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic3")), is("kafka-connect-topic3"));
+    assertThat(
+        detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic1")), is("something"));
+    assertThat(
+        detailTypeMapper.getDetailType(createSinkRecordWithTopic("topic3")),
+        is("kafka-connect-topic3"));
   }
 
   private SinkRecord createSinkRecordWithTopic(String topic) {

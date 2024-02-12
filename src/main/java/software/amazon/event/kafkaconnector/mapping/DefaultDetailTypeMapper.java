@@ -14,7 +14,7 @@ public class DefaultDetailTypeMapper implements DetailTypeMapper {
     var detailType = eventBridgeSinkConfig.detailType;
     if (detailType != null) return detailType.replace("${topic}", sinkRecord.topic());
     return eventBridgeSinkConfig.detailTypeByTopic.getOrDefault(
-            sinkRecord.topic(), AWS_DETAIL_TYPES_DEFAULT.replace("${topic}", sinkRecord.topic()));
+        sinkRecord.topic(), AWS_DETAIL_TYPES_DEFAULT.replace("${topic}", sinkRecord.topic()));
   }
 
   @Override

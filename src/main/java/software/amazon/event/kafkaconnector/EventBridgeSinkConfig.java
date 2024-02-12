@@ -55,7 +55,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   public static final String AWS_DETAIL_TYPES_DEFAULT = "kafka-connect-${topic}";
 
   public static final String AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT =
-      "software.amazon.event.kafkaconnector.mapping.DefaultTopicDetailTypeMapper";
+      "software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper";
   private static final String AWS_DETAIL_TYPES_DOC =
       "The detail-type that will be used for the EventBridge events. "
           + "Can be defined per topic e.g., 'topic1:MyDetailType, topic2:MyDetailType', as a single expression "
@@ -63,7 +63,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
           + "or as a static value without additional topic information for all topics e.g., 'my-detail-type'.";
 
   private static final String AWS_DETAIL_TYPES_MAPPER_DOC =
-      "Define a custom implementation class for TopicDetailTypeMapper interface to be able to map a Kafka topic to EventBridge detailType. Define full class path e.g. software.amazon.event.kafkaconnector.mapping.DefaultTopicDetailTypeMapper.";
+      "Define a custom implementation class for TopicDetailTypeMapper interface to be able to map a Kafka topic to EventBridge detailType. Define full class path e.g. software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper.";
 
   private static final String AWS_EVENTBUS_RESOURCES_DOC =
       "An optional comma-separated list of strings to add to "
