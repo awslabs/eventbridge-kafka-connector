@@ -2,18 +2,19 @@ package software.amazon.event.kafkaconnector.mapping;
 
 import static software.amazon.event.kafkaconnector.EventBridgeSinkConfig.AWS_DETAIL_TYPES_DEFAULT;
 
+import org.apache.kafka.connect.sink.SinkRecord;
 import software.amazon.event.kafkaconnector.EventBridgeSinkConfig;
 
-public class DefaultTopicDetailTypeMapper implements TopicDetailTypeMapper {
+public class DefaultDetailTypeMapper implements DetailTypeMapper {
 
   private EventBridgeSinkConfig eventBridgeSinkConfig;
 
   @Override
-  public String getDetailType(String topic) {
+  public String getDetailType(SinkRecord sinkRecord) {
     var detailType = eventBridgeSinkConfig.detailType;
-    if (detailType != null) return detailType.replace("${topic}", topic);
+    if (detailType != null) return detailType.replace("${topic}", sinkRecord.topic());
     return eventBridgeSinkConfig.detailTypeByTopic.getOrDefault(
-        topic, AWS_DETAIL_TYPES_DEFAULT.replace("${topic}", topic));
+            sinkRecord.topic(), AWS_DETAIL_TYPES_DEFAULT.replace("${topic}", sinkRecord.topic()));
   }
 
   @Override
