@@ -36,7 +36,7 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
     jsonConverter.configure(singletonMap("schemas.enable", "false"), false);
     this.config = config;
     try {
-      var myClass = Class.forName(config.detailTypesMapperClass);
+      var myClass = Class.forName(config.detailTypeMapperClass);
       var constructor = myClass.getDeclaredConstructor();
       this.topicDetailTypeMapper = (TopicDetailTypeMapper) constructor.newInstance();
       this.topicDetailTypeMapper.configure(config);

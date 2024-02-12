@@ -63,7 +63,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
           + "or as a static value without additional topic information for all topics e.g., 'my-detail-type'.";
 
   private static final String AWS_DETAIL_TYPES_MAPPER_DOC =
-      "Define a custom implementation class for topic to detailType mapping. Define full class path here.";
+      "Define a custom implementation class for TopicDetailTypeMapper interface to be able to map a Kafka topic to EventBridge detailType. Define full class path e.g. software.amazon.event.kafkaconnector.mapping.DefaultTopicDetailTypeMapper.";
 
   private static final String AWS_EVENTBUS_RESOURCES_DOC =
       "An optional comma-separated list of strings to add to "
@@ -84,7 +84,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   private final Logger log = ContextAwareLoggerFactory.getLogger(EventBridgeSinkConfig.class);
   public Map<String, String> detailTypeByTopic;
   public String detailType;
-  public String detailTypesMapperClass;
+  public String detailTypeMapperClass;
 
   public EventBridgeSinkConfig(final Map<?, ?> originalProps) {
     super(CONFIG_DEF, originalProps);
@@ -99,7 +99,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
     this.maxRetries = getInt(AWS_RETRIES_CONFIG);
     this.retriesDelay = getInt(AWS_RETRIES_DELAY_CONFIG);
     this.resources = getList(AWS_EVENTBUS_RESOURCES_CONFIG);
-    this.detailTypesMapperClass = getString(AWS_DETAIL_TYPES_MAPPER_CLASS);
+    this.detailTypeMapperClass = getString(AWS_DETAIL_TYPES_MAPPER_CLASS);
 
     var detailTypes = getList(AWS_DETAIL_TYPES_CONFIG);
     if (detailTypes.size() > 1 || detailTypes.get(0).contains(":")) {
