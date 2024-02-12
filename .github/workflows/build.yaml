@@ -35,7 +35,7 @@ jobs:
       - name: Build JAR Artifacts and verify coverage
         run: mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean package -Drevision=$(git describe --tags --always)
       - name: Upload Artifacts
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3
         with:
           name: maven-build-java-${{ matrix.java }}
           path: target/
