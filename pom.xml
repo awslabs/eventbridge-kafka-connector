@@ -19,11 +19,11 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <aws.java.sdk.version>2.23.17</aws.java.sdk.version>
+        <aws.java.sdk.version>2.24.10</aws.java.sdk.version>
         <aws.schema.registry.version>1.1.15</aws.schema.registry.version>
-        <ch.qos.logback.version>1.4.14</ch.qos.logback.version>
+        <ch.qos.logback.version>1.5.0</ch.qos.logback.version>
         <com.fasterxml.jackson.version>2.16.1</com.fasterxml.jackson.version>
-        <commons-codec.version>1.16.0</commons-codec.version>
+        <commons-codec.version>1.16.1</commons-codec.version>
         <commons-logging.version>1.3.0</commons-logging.version>
         <connect.api.version>3.6.1</connect.api.version>
         <joda-time.version>2.12.7</joda-time.version>
@@ -34,8 +34,8 @@
         <org.jacoco.version>0.8.11</org.jacoco.version>
         <org.junit.jupiter.version>5.10.2</org.junit.jupiter.version>
         <org.mockito.version>5.10.0</org.mockito.version>
-        <org.slf4j.version>2.0.11</org.slf4j.version>
-        <org.testcontainers.version>1.19.4</org.testcontainers.version>
+        <org.slf4j.version>2.0.12</org.slf4j.version>
+        <org.testcontainers.version>1.19.6</org.testcontainers.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -132,7 +132,7 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.19.4</version>
+            <version>1.19.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -346,7 +346,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.5.2</version>
                 <executions>
                     <execution>
                         <configuration>
