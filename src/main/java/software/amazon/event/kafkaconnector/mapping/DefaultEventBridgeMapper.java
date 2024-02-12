@@ -30,10 +30,20 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
   private final EventBridgeSinkConfig config;
   private final JsonConverter jsonConverter = new JsonConverter();
   private final ObjectMapper objectMapper = new ObjectMapper();
+  private final TopicDetailTypeMapper topicDetailTypeMapper;
 
   public DefaultEventBridgeMapper(EventBridgeSinkConfig config) {
     jsonConverter.configure(singletonMap("schemas.enable", "false"), false);
     this.config = config;
+    try {
+      var myClass = Class.forName(config.detailTypesMapperClass);
+      var constructor = myClass.getDeclaredConstructor();
+      this.topicDetailTypeMapper = (TopicDetailTypeMapper) constructor.newInstance();
+      this.topicDetailTypeMapper.configure(config);
+    } catch (Exception e) {
+      //This will already be verified in the Config Validator
+      throw new RuntimeException("Topic to Detail-Type Mapper Class can't be loaded.");
+    }
   }
 
   public EventBridgeMappingResult map(List<SinkRecord> records) {
@@ -57,7 +67,7 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
           PutEventsRequestEntry.builder()
               .eventBusName(config.eventBusArn)
               .source(sourcePrefix + config.connectorId)
-              .detailType(config.getDetailType(record.topic()))
+              .detailType(topicDetailTypeMapper.getDetailType(record.topic()))
               .resources(config.resources)
               .detail(createJsonPayload(record))
               .build());

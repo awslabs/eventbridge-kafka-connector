@@ -9,8 +9,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import software.amazon.event.kafkaconnector.mapping.DefaultTopicDetailTypeMapper;
 
-public class EventBridgeSinkConfigTest {
+public class TopicDetailTypeMapperTest {
 
   @Test
   public void validDetailType() {
@@ -21,10 +22,11 @@ public class EventBridgeSinkConfigTest {
             "aws.eventbridge.detail.types", "test",
             "aws.eventbridge.connector.id", "test-id");
 
-    var config = new EventBridgeSinkConfig(myConfig);
+    var topicNamingMapper = new DefaultTopicDetailTypeMapper();
+    topicNamingMapper.configure(new EventBridgeSinkConfig(myConfig));
 
-    assertThat(config.getDetailType("topic1"), is("test"));
-    assertThat(config.getDetailType("topic2"), is("test"));
+    assertThat(topicNamingMapper.getDetailType("topic1"), is("test"));
+    assertThat(topicNamingMapper.getDetailType("topic2"), is("test"));
   }
 
   @Test
@@ -36,9 +38,10 @@ public class EventBridgeSinkConfigTest {
             "aws.eventbridge.detail.types", "my-first-${topic}",
             "aws.eventbridge.connector.id", "test-id");
 
-    var config = new EventBridgeSinkConfig(myConfig);
+    var topicNamingMapper = new DefaultTopicDetailTypeMapper();
+    topicNamingMapper.configure(new EventBridgeSinkConfig(myConfig));
 
-    assertThat(config.getDetailType("something"), is("my-first-something"));
+    assertThat(topicNamingMapper.getDetailType("something"), is("my-first-something"));
   }
 
   @Test
@@ -50,10 +53,11 @@ public class EventBridgeSinkConfigTest {
             "aws.eventbridge.detail.types", "topic1:something,topic2:something-else",
             "aws.eventbridge.connector.id", "test-id");
 
-    var config = new EventBridgeSinkConfig(myConfig);
+    var topicNamingMapper = new DefaultTopicDetailTypeMapper();
+    topicNamingMapper.configure(new EventBridgeSinkConfig(myConfig));
 
-    assertThat(config.getDetailType("topic1"), is("something"));
-    assertThat(config.getDetailType("topic2"), is("something-else"));
+    assertThat(topicNamingMapper.getDetailType("topic1"), is("something"));
+    assertThat(topicNamingMapper.getDetailType("topic2"), is("something-else"));
   }
 
   @Test
@@ -65,9 +69,10 @@ public class EventBridgeSinkConfigTest {
             "aws.eventbridge.detail.types", "topic1:something,topic2:something-else",
             "aws.eventbridge.connector.id", "test-id");
 
-    var config = new EventBridgeSinkConfig(myConfig);
+    var topicNamingMapper = new DefaultTopicDetailTypeMapper();
+    topicNamingMapper.configure(new EventBridgeSinkConfig(myConfig));
 
-    assertThat(config.getDetailType("topic3"), is("kafka-connect-topic3"));
+    assertThat(topicNamingMapper.getDetailType("topic3"), is("kafka-connect-topic3"));
   }
 
   @Test
@@ -81,7 +86,10 @@ public class EventBridgeSinkConfigTest {
 
     var config = new EventBridgeSinkConfig(myConfig);
 
-    assertThat(config.getDetailType("topic1"), is("something"));
-    assertThat(config.getDetailType("topic3"), is("kafka-connect-topic3"));
+    var topicNamingMapper = new DefaultTopicDetailTypeMapper();
+    topicNamingMapper.configure(new EventBridgeSinkConfig(myConfig));
+
+    assertThat(topicNamingMapper.getDetailType("topic1"), is("something"));
+    assertThat(topicNamingMapper.getDetailType("topic3"), is("kafka-connect-topic3"));
   }
 }

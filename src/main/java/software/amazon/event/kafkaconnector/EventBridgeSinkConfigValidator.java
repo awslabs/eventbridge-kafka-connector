@@ -86,6 +86,12 @@ public class EventBridgeSinkConfigValidator {
           validateProfileName(configValue, getenv);
           break;
         }
+
+      case AWS_DETAIL_TYPES_MAPPER_CLASS:
+        {
+          validateDetailTypeMapperClass(configValue);
+          break;
+        }
     }
   }
 
@@ -93,6 +99,16 @@ public class EventBridgeSinkConfigValidator {
     var connectorId = (String) configValue.value();
     if (connectorId == null || connectorId.trim().isBlank()) {
       throw new ConfigException(configValue.name() + " must be set");
+    }
+  }
+
+  private static void validateDetailTypeMapperClass(ConfigValue configValue) {
+    var mapperClass = (String) configValue.value();
+    try {
+      Class.forName(mapperClass);
+    } catch (ClassNotFoundException e) {
+      throw new ConfigException(
+          mapperClass + " can't be loaded. Ensure the class path you have specified is correct.");
     }
   }
 
