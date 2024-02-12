@@ -31,6 +31,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   static final String AWS_ROLE_ARN_CONFIG = "aws.eventbridge.iam.role.arn";
   static final String AWS_ROLE_EXTERNAL_ID_CONFIG = "aws.eventbridge.iam.external.id";
   static final String AWS_DETAIL_TYPES_CONFIG = "aws.eventbridge.detail.types";
+  static final String AWS_DETAIL_TYPES_MAPPER_CLASS = "aws.eventbridge.detail.types.mapper.class";
   static final String AWS_EVENTBUS_RESOURCES_CONFIG = "aws.eventbridge.eventbus.resources";
   private static final String AWS_CONNECTOR_ID_DOC =
       "The unique ID of this connector (used in the event source field to uniquely identify a connector).";
@@ -51,12 +52,19 @@ public class EventBridgeSinkConfig extends AbstractConfig {
       "The IAM external id (optional) when role-based authentication is used";
   private static final String AWS_PROFILE_NAME_CONFIG_DOC =
       "The profile to use from the configuration and credentials files to retrieve IAM credentials";
-  private static final String AWS_DETAIL_TYPES_DEFAULT = "kafka-connect-${topic}";
+  public static final String AWS_DETAIL_TYPES_DEFAULT = "kafka-connect-${topic}";
+
+  private static final String AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT =
+      "software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper";
   private static final String AWS_DETAIL_TYPES_DOC =
       "The detail-type that will be used for the EventBridge events. "
           + "Can be defined per topic e.g., 'topic1:MyDetailType, topic2:MyDetailType', as a single expression "
           + "with a dynamic '${topic}' placeholder for all topics e.g., 'my-detail-type-${topic}', "
           + "or as a static value without additional topic information for all topics e.g., 'my-detail-type'.";
+
+  private static final String AWS_DETAIL_TYPES_MAPPER_DOC =
+      "Define a custom implementation class for the DetailTypeMapper interface to customize the mapping of Kafka topics or records to the EventBridge detail-type. Define full class path e.g. software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper.";
+
   private static final String AWS_EVENTBUS_RESOURCES_DOC =
       "An optional comma-separated list of strings to add to "
           + "the resources field in the outgoing EventBridge events.";
@@ -74,8 +82,9 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   public final int maxRetries;
   public final long retriesDelay;
   private final Logger log = ContextAwareLoggerFactory.getLogger(EventBridgeSinkConfig.class);
-  private Map<String, String> detailTypeByTopic;
-  private String detailType;
+  public Map<String, String> detailTypeByTopic;
+  public String detailType;
+  public String detailTypeMapperClass;
 
   public EventBridgeSinkConfig(final Map<?, ?> originalProps) {
     super(CONFIG_DEF, originalProps);
@@ -90,6 +99,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
     this.maxRetries = getInt(AWS_RETRIES_CONFIG);
     this.retriesDelay = getInt(AWS_RETRIES_DELAY_CONFIG);
     this.resources = getList(AWS_EVENTBUS_RESOURCES_CONFIG);
+    this.detailTypeMapperClass = getString(AWS_DETAIL_TYPES_MAPPER_CLASS);
 
     var detailTypes = getList(AWS_DETAIL_TYPES_CONFIG);
     if (detailTypes.size() > 1 || detailTypes.get(0).contains(":")) {
@@ -165,11 +175,11 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         "",
         Importance.MEDIUM,
         AWS_EVENTBUS_RESOURCES_DOC);
-  }
-
-  public String getDetailType(String topic) {
-    if (detailType != null) return detailType.replace("${topic}", topic);
-    return detailTypeByTopic.getOrDefault(
-        topic, AWS_DETAIL_TYPES_DEFAULT.replace("${topic}", topic));
+    configDef.define(
+        AWS_DETAIL_TYPES_MAPPER_CLASS,
+        Type.STRING,
+        AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT,
+        Importance.MEDIUM,
+        AWS_DETAIL_TYPES_MAPPER_DOC);
   }
 }
