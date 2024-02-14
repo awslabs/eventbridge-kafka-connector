@@ -8,7 +8,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import software.amazon.event.kafkaconnector.EventBridgeSinkConfig;
 
 public interface DetailTypeMapper {
-  String getDetailType(SinkRecord topic);
+  String getDetailType(SinkRecord record);
 
   void configure(EventBridgeSinkConfig eventBridgeSinkConfig);
 }

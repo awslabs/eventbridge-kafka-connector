@@ -54,7 +54,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
       "The profile to use from the configuration and credentials files to retrieve IAM credentials";
   public static final String AWS_DETAIL_TYPES_DEFAULT = "kafka-connect-${topic}";
 
-  public static final String AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT =
+  private static final String AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT =
       "software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper";
   private static final String AWS_DETAIL_TYPES_DOC =
       "The detail-type that will be used for the EventBridge events. "
