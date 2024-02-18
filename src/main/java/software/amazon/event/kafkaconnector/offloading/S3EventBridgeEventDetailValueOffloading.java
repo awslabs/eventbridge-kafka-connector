@@ -6,9 +6,12 @@ package software.amazon.event.kafkaconnector.offloading;
 
 import static com.jayway.jsonpath.Configuration.defaultConfiguration;
 import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
+import static software.amazon.awssdk.utils.BinaryUtils.toHex;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.reportOnly;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.failure;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.success;
@@ -16,9 +19,13 @@ import static software.amazon.event.kafkaconnector.offloading.S3EventBridgeEvent
 
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.apache.kafka.connect.json.JsonConverter;
+import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -35,12 +42,18 @@ public class S3EventBridgeEventDetailValueOffloading
   private static final Logger logger =
       ContextAwareLoggerFactory.getLogger(S3EventBridgeEventDetailValueOffloading.class);
 
+  private final String bucketName;
   private final S3Client client;
   private final ReplaceWithDataRefJsonTransformer detailValueTransformer;
+  private final JsonConverter jsonConverter;
 
-  public S3EventBridgeEventDetailValueOffloading(final S3Client client, final String jsonPath) {
-    this.detailValueTransformer = replaceWithDataRef(jsonPath);
+  public S3EventBridgeEventDetailValueOffloading(
+      final S3Client client, final String bucketName, final String jsonPathExp) {
+    this.bucketName = bucketName;
     this.client = client;
+    this.detailValueTransformer = replaceWithDataRef(jsonPathExp);
+    this.jsonConverter = new JsonConverter();
+    this.jsonConverter.configure(singletonMap("schemas.enable", "false"), false);
   }
 
   @Override
@@ -61,7 +74,7 @@ public class S3EventBridgeEventDetailValueOffloading
   private EventBridgeResult<PutEventsRequestEntry> apply(
       MappedSinkRecord<PutEventsRequestEntry> mappedSinkRecord) {
     try {
-      var s3key = "arn:aws:s3:::bucket_name/key_name"; // TODO S3 Key generator
+      var s3key = generateS3Key(mappedSinkRecord.getSinkRecord());
       var putEventsRequestEntry =
           mappedSinkRecord
               .getValue()
@@ -74,13 +87,31 @@ public class S3EventBridgeEventDetailValueOffloading
                               s3key)));
 
       return success(mappedSinkRecord.getSinkRecord(), putEventsRequestEntry);
-    } catch (Exception e) {
+    } catch (Exception e /*NoSuchAlgorithmException*/) {
       return failure(mappedSinkRecord.getSinkRecord(), reportOnly("TODO", e));
     }
   }
 
+  private String generateS3Key(final SinkRecord sinkRecord) throws NoSuchAlgorithmException {
+    var payload = payloadOf(sinkRecord);
+    var s3Key = format("arn:aws:s3:::%s/%s", bucketName, toHex(sha256Of(payload)));
+
+    logger.debug("Generated S3 key={} for payload={}.", s3Key, new String(payload));
+    return s3Key;
+  }
+
+  private byte[] payloadOf(SinkRecord sinkRecord) {
+    return jsonConverter.fromConnectData(
+        sinkRecord.topic(), sinkRecord.valueSchema(), sinkRecord.value());
+  }
+
+  private static byte[] sha256Of(byte[] payload) throws NoSuchAlgorithmException {
+    // MessageDigest is not thread safe
+    return MessageDigest.getInstance("SHA-256").digest(payload);
+  }
+
   public void put(final String content, final String s3key) {
-    var request = PutObjectRequest.builder().bucket("bucket_name" /* TODO */).key(s3key).build();
+    var request = PutObjectRequest.builder().bucket(bucketName).key(s3key).build();
     var response = client.putObject(request, RequestBody.fromString(content, UTF_8));
     // TODO eval response
   }
@@ -92,27 +123,41 @@ public class S3EventBridgeEventDetailValueOffloading
 
     private static final Configuration configuration =
         defaultConfiguration().addOptions(SUPPRESS_EXCEPTIONS);
-    private static final JsonPath jsonPathAdd = JsonPath.compile("$.detail");
+    private static final JsonPath jsonPathAdd = JsonPath.compile("$");
     private static final String dataRefKey = "dataref";
 
     private final JsonPath jsonPathRemove;
 
-    private ReplaceWithDataRefJsonTransformer(String jsonPath) {
-      jsonPathRemove = JsonPath.compile(jsonPath);
-      // TODO check
-      //  jsonPathRemove.getPath().startsWith("$['detail']")
-      //  jsonPathRemove.isDefinite()
+    private ReplaceWithDataRefJsonTransformer(String jsonPathExp) {
+      JsonPath jsonPath;
+      try {
+        jsonPath = JsonPath.compile(jsonPathExp);
+      } catch (Exception e) {
+        throw new IllegalArgumentException(format("Invalid JSON Path '%s'.", jsonPathExp));
+      }
+
+      if (!jsonPath.getPath().startsWith("$['detail']['value']")) {
+        throw new IllegalArgumentException(
+            format("JSON Path must start with '$.detail.value' but is '%s'.", jsonPathExp));
+      }
+      if (!jsonPath.isDefinite()) {
+        throw new IllegalArgumentException(
+            format("JSON Path must be definite but '%s' is not.", jsonPathExp));
+      }
+
+      // rewrite $.detail -> $, because PutEventsRequestEntry#detail is the sub document of $.detail
+      jsonPathRemove = JsonPath.compile("$" + jsonPath.getPath().substring("$['detail']".length()));
     }
 
-    public static ReplaceWithDataRefJsonTransformer replaceWithDataRef(String jsonPath) {
-      return new ReplaceWithDataRefJsonTransformer(jsonPath);
+    public static ReplaceWithDataRefJsonTransformer replaceWithDataRef(String jsonPathExp) {
+      return new ReplaceWithDataRefJsonTransformer(jsonPathExp);
     }
 
     public String apply(String content, Consumer<String> onDeleted, String dataRefValue) {
       var ctx = JsonPath.parse(content, configuration);
       var data = ctx.read(jsonPathRemove);
       if (data != null) {
-        logger.info("Found JSON at '{}'.", jsonPathRemove.getPath());
+        logger.debug("Found JSON at '{}'.", jsonPathRemove.getPath());
         if (data instanceof Map || data instanceof List) {
           onDeleted.accept(JsonPath.parse(data).jsonString());
         } else {
