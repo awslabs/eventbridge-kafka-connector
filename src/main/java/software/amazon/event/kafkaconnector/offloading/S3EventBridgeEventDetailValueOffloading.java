@@ -12,7 +12,9 @@ import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 import static software.amazon.awssdk.utils.BinaryUtils.toHex;
+import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.panic;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.reportOnly;
+import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.retry;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.failure;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.success;
 import static software.amazon.event.kafkaconnector.offloading.S3EventBridgeEventDetailValueOffloading.ReplaceWithDataRefJsonTransformer.replaceWithDataRef;
@@ -32,6 +34,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.event.kafkaconnector.EventBridgeResult;
 import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
@@ -80,8 +83,18 @@ public class S3EventBridgeEventDetailValueOffloading
           mappedSinkRecord.getValue().copy(it -> it.detail(transformedDetail));
 
       return success(mappedSinkRecord.getSinkRecord(), putEventsRequestEntry);
-    } catch (Exception e /*NoSuchAlgorithmException*/) {
-      return failure(mappedSinkRecord.getSinkRecord(), reportOnly("TODO", e));
+
+    } catch (S3Exception e) {
+      // https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/handling-exceptions.html
+      // https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html#ErrorCodeList
+      if (e.statusCode() == 500) {
+        return failure(mappedSinkRecord.getSinkRecord(), retry(e));
+      }
+      // TODO 429
+      return failure(
+          mappedSinkRecord.getSinkRecord(), reportOnly(e.awsErrorDetails().errorMessage(), e));
+    } catch (Exception e) {
+      return failure(mappedSinkRecord.getSinkRecord(), panic(e));
     }
   }
 

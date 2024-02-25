@@ -9,12 +9,17 @@ import static org.apache.kafka.connect.data.Schema.STRING_SCHEMA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 import static org.skyscreamer.jsonassert.JSONCompareMode.STRICT;
+import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.PANIC;
+import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.REPORT_ONLY;
+import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.RETRY;
 
 import java.io.IOException;
 import java.util.List;
@@ -34,10 +39,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.event.kafkaconnector.EventBridgeSinkConfig;
 import software.amazon.event.kafkaconnector.mapping.DefaultEventBridgeMapper;
 import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
@@ -284,6 +291,91 @@ class S3EventBridgeEventDetailValueOffloadingTest {
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
+  }
+
+  @Test
+  public void shouldReturnReportError() {
+
+    when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+        .thenThrow(
+            S3Exception.builder()
+                .statusCode(400)
+                .awsErrorDetails(AwsErrorDetails.builder().errorMessage("Some message").build())
+                .build());
+
+    var value =
+        new Struct(ORDER_SCHEMA)
+            .put("orderItems", List.of("item-1", "item-2"))
+            .put("orderCreatedTime", "Wed Dec 27 18:51:39 CET 2023");
+
+    var mappedSinkRecords =
+        withDefaultEventBridgeMapperMap(
+            getEventBridgeSinkConfig(),
+            new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
+
+    var actual =
+        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+            .apply(mappedSinkRecords);
+
+    assertThat(actual.success).isEmpty();
+    assertThat(actual.errors)
+        .hasSize(1)
+        .extracting(it -> it.getValue().getType())
+        .containsExactly(REPORT_ONLY);
+  }
+
+  @Test
+  public void shouldReturnRetryError() {
+
+    when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+        .thenThrow(S3Exception.builder().statusCode(500).build());
+
+    var value =
+        new Struct(ORDER_SCHEMA)
+            .put("orderItems", List.of("item-1", "item-2"))
+            .put("orderCreatedTime", "Wed Dec 27 18:51:39 CET 2023");
+
+    var mappedSinkRecords =
+        withDefaultEventBridgeMapperMap(
+            getEventBridgeSinkConfig(),
+            new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
+
+    var actual =
+        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+            .apply(mappedSinkRecords);
+
+    assertThat(actual.success).isEmpty();
+    assertThat(actual.errors)
+        .hasSize(1)
+        .extracting(it -> it.getValue().getType())
+        .containsExactly(RETRY);
+  }
+
+  @Test
+  public void shouldReturnPanicError() {
+
+    when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+        .thenThrow(new RuntimeException("by intention"));
+
+    var value =
+        new Struct(ORDER_SCHEMA)
+            .put("orderItems", List.of("item-1", "item-2"))
+            .put("orderCreatedTime", "Wed Dec 27 18:51:39 CET 2023");
+
+    var mappedSinkRecords =
+        withDefaultEventBridgeMapperMap(
+            getEventBridgeSinkConfig(),
+            new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
+
+    var actual =
+        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+            .apply(mappedSinkRecords);
+
+    assertThat(actual.success).isEmpty();
+    assertThat(actual.errors)
+        .hasSize(1)
+        .extracting(it -> it.getValue().getType())
+        .containsExactly(PANIC);
   }
 
   private static EventBridgeSinkConfig getEventBridgeSinkConfig() {
