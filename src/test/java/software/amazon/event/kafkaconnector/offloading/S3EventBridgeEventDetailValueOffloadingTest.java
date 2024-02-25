@@ -101,7 +101,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   }
 
   @Test
-  public void shouldPutFullSinkRecordValue() {
+  public void shouldPutFullSinkRecordValueWithJsonValue() {
 
     var value =
         new Struct(ORDER_SCHEMA)
@@ -149,7 +149,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   }
 
   @Test
-  public void shouldPutSubDocumentOfSinkRecordValue() {
+  public void shouldPutSubDocumentOfSinkRecordValueWithJsonValue() {
 
     var value =
         new Struct(ORDER_SCHEMA)
@@ -192,7 +192,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   }
 
   @Test
-  public void shouldPutNothingOfSinkRecordValue() {
+  public void shouldPutNothingOfSinkRecordValueWithJsonValue() {
 
     var value =
         new Struct(ORDER_SCHEMA)
@@ -217,6 +217,70 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             s ->
                 assertEquals(
                     "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":{\"orderItems\":[\"item-1\",\"item-2\"],\"orderCreatedTime\":\"Wed Dec 27 18:51:39 CET 2023\"}}",
+                    s.get(0),
+                    STRICT));
+    assertThat(actual.errors).isEmpty();
+  }
+
+  @Test
+  public void shouldPutFullSinkRecordValueWithStringValue() {
+
+    var mappedSinkRecords =
+        withDefaultEventBridgeMapperMap(
+            getEventBridgeSinkConfig(),
+            new SinkRecord("topic", 0, STRING_SCHEMA, "1", STRING_SCHEMA, "Hello world", 0));
+
+    var actual =
+        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+            .apply(mappedSinkRecords);
+
+    verify(s3Client).putObject(putObjectRequestCaptor.capture(), requestBodyCaptor.capture());
+
+    assertThat(putObjectRequestCaptor.getAllValues())
+        .hasSize(1)
+        .extracting(PutObjectRequest::bucket, PutObjectRequest::key)
+        .containsExactly(
+            tuple(
+                "test",
+                "arn:aws:s3:::test/b58f34e73579dcfb700daacadd50fa7503f1e4c6c881cb4d720fe84a57be306d"));
+    assertThat(requestBodyCaptor.getAllValues())
+        .hasSize(1)
+        .extracting(requestBodyAsString())
+        .containsExactly("Hello world");
+
+    assertThat(actual.success)
+        .hasSize(1)
+        .extracting(x -> x.getValue().detail())
+        .satisfies(
+            s ->
+                assertEquals(
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/b58f34e73579dcfb700daacadd50fa7503f1e4c6c881cb4d720fe84a57be306d\"}",
+                    s.get(0),
+                    STRICT));
+    assertThat(actual.errors).isEmpty();
+  }
+
+  @Test
+  public void shouldPutNothingOfSinkRecordValueWithStringValue() {
+
+    var mappedSinkRecords =
+        withDefaultEventBridgeMapperMap(
+            getEventBridgeSinkConfig(),
+            new SinkRecord("topic", 0, STRING_SCHEMA, "1", STRING_SCHEMA, "Hello world", 0));
+
+    var actual =
+        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value.key")
+            .apply(mappedSinkRecords);
+
+    verifyNoInteractions(s3Client);
+
+    assertThat(actual.success)
+        .hasSize(1)
+        .extracting(x -> x.getValue().detail())
+        .satisfies(
+            s ->
+                assertEquals(
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":\"Hello world\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
