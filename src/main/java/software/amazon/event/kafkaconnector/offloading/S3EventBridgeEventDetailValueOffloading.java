@@ -74,22 +74,22 @@ public class S3EventBridgeEventDetailValueOffloading
   private EventBridgeResult<PutEventsRequestEntry> apply(
       MappedSinkRecord<PutEventsRequestEntry> mappedSinkRecord) {
     try {
-      var s3key = generateS3Key(mappedSinkRecord.getSinkRecord());
+
+      var transformedDetail = extractJsonPathFromDetailAndPutS3Object(mappedSinkRecord);
       var putEventsRequestEntry =
-          mappedSinkRecord
-              .getValue()
-              .copy(
-                  it ->
-                      it.detail(
-                          detailValueTransformer.apply(
-                              mappedSinkRecord.getValue().detail(),
-                              removedContent -> put(removedContent, s3key),
-                              s3key)));
+          mappedSinkRecord.getValue().copy(it -> it.detail(transformedDetail));
 
       return success(mappedSinkRecord.getSinkRecord(), putEventsRequestEntry);
     } catch (Exception e /*NoSuchAlgorithmException*/) {
       return failure(mappedSinkRecord.getSinkRecord(), reportOnly("TODO", e));
     }
+  }
+
+  private String extractJsonPathFromDetailAndPutS3Object(
+      MappedSinkRecord<PutEventsRequestEntry> mappedSinkRecord) throws NoSuchAlgorithmException {
+    var s3key = generateS3Key(mappedSinkRecord.getSinkRecord());
+    return detailValueTransformer.apply(
+        mappedSinkRecord.getValue().detail(), removedContent -> put(removedContent, s3key), s3key);
   }
 
   private String generateS3Key(final SinkRecord sinkRecord) throws NoSuchAlgorithmException {
@@ -122,7 +122,12 @@ public class S3EventBridgeEventDetailValueOffloading
         LoggerFactory.getLogger(ReplaceWithDataRefJsonTransformer.class);
 
     private static final Configuration configuration =
-        defaultConfiguration().addOptions(SUPPRESS_EXCEPTIONS);
+        defaultConfiguration()
+            .addOptions(
+                SUPPRESS_EXCEPTIONS // suppress exception otherwise
+                // com.jayway.jsonpath.ReadContext#read throws an exception if JSON path could not
+                // be found
+                );
     private static final JsonPath jsonPathAdd = JsonPath.compile("$");
     private static final String dataRefKey = "dataref";
 
