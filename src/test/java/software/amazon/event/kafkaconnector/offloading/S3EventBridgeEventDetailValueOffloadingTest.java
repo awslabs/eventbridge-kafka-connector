@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 import static org.skyscreamer.jsonassert.JSONAssert.assertEquals;
 import static org.skyscreamer.jsonassert.JSONCompareMode.STRICT;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.PANIC;
-import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.REPORT_ONLY;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.RETRY;
 
 import java.io.IOException;
@@ -31,6 +30,7 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.assertj.core.api.iterable.ThrowingExtractor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -294,41 +294,18 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   }
 
   @Test
-  public void shouldReturnReportError() {
-
-    when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-        .thenThrow(
-            S3Exception.builder()
-                .statusCode(400)
-                .awsErrorDetails(AwsErrorDetails.builder().errorMessage("Some message").build())
-                .build());
-
-    var value =
-        new Struct(ORDER_SCHEMA)
-            .put("orderItems", List.of("item-1", "item-2"))
-            .put("orderCreatedTime", "Wed Dec 27 18:51:39 CET 2023");
-
-    var mappedSinkRecords =
-        withDefaultEventBridgeMapperMap(
-            getEventBridgeSinkConfig(),
-            new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
-
-    var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
-            .apply(mappedSinkRecords);
-
-    assertThat(actual.success).isEmpty();
-    assertThat(actual.errors)
-        .hasSize(1)
-        .extracting(it -> it.getValue().getType())
-        .containsExactly(REPORT_ONLY);
-  }
+  @Disabled("decision required wich ones")
+  public void shouldReturnReportError() {}
 
   @Test
   public void shouldReturnRetryError() {
 
     when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-        .thenThrow(S3Exception.builder().statusCode(500).build());
+        .thenThrow(
+            S3Exception.builder()
+                .statusCode(500)
+                .awsErrorDetails(AwsErrorDetails.builder().errorCode("InternalError").build())
+                .build());
 
     var value =
         new Struct(ORDER_SCHEMA)
@@ -355,7 +332,17 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   public void shouldReturnPanicError() {
 
     when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-        .thenThrow(new RuntimeException("by intention"));
+        .thenThrow(
+            S3Exception.builder()
+                .statusCode(403)
+                .awsErrorDetails(
+                    AwsErrorDetails.builder()
+                        .errorMessage(
+                            "The AWS Access Key Id you provided does not exist in our records.")
+                        .errorCode("InvalidAccessKeyId")
+                        .serviceName("S3")
+                        .build())
+                .build());
 
     var value =
         new Struct(ORDER_SCHEMA)

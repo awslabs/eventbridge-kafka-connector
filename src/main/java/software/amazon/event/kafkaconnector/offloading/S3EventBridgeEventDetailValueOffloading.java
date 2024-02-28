@@ -13,7 +13,6 @@ import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 import static software.amazon.awssdk.utils.BinaryUtils.toHex;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.panic;
-import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.reportOnly;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.retry;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.failure;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.success;
@@ -91,8 +90,7 @@ public class S3EventBridgeEventDetailValueOffloading
         return failure(mappedSinkRecord.getSinkRecord(), retry(e));
       }
       // TODO 429
-      return failure(
-          mappedSinkRecord.getSinkRecord(), reportOnly(e.awsErrorDetails().errorMessage(), e));
+      return failure(mappedSinkRecord.getSinkRecord(), panic(e));
     } catch (Exception e) {
       return failure(mappedSinkRecord.getSinkRecord(), panic(e));
     }
