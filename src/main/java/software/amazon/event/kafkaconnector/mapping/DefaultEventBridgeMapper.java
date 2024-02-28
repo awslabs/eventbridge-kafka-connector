@@ -35,15 +35,7 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
   public DefaultEventBridgeMapper(EventBridgeSinkConfig config) {
     jsonConverter.configure(singletonMap("schemas.enable", "false"), false);
     this.config = config;
-    try {
-      var myClass = Class.forName(config.detailTypeMapperClass);
-      var constructor = myClass.getDeclaredConstructor();
-      this.detailTypeMapper = (DetailTypeMapper) constructor.newInstance();
-      this.detailTypeMapper.configure(config);
-    } catch (Exception e) {
-      // This will already be verified in the Config Validator
-      throw new RuntimeException("Topic to Detail-Type Mapper Class can't be loaded.");
-    }
+    this.detailTypeMapper = getDetailTypeMapper(config);
   }
 
   public EventBridgeMappingResult map(List<SinkRecord> records) {
@@ -138,5 +130,18 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
    */
   private JsonNode createJSONFromByteArray(byte[] jsonBytes) throws IOException {
     return objectMapper.readTree(jsonBytes);
+  }
+
+  private DetailTypeMapper getDetailTypeMapper(EventBridgeSinkConfig config) {
+    try {
+      var myClass = Class.forName(config.detailTypeMapperClass);
+      var constructor = myClass.getDeclaredConstructor();
+      var detailTypeMapper = (DetailTypeMapper) constructor.newInstance();
+      detailTypeMapper.configure(config);
+      return detailTypeMapper;
+    } catch (Exception e) {
+      // This will already be verified in the Config Validator
+      throw new RuntimeException("Topic to Detail-Type Mapper Class can't be loaded.");
+    }
   }
 }
