@@ -3,6 +3,7 @@ version: "3"
 services:
   # is redpanda: reusing names to not break kafka integration tests
   kafka:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.1
     command:
       - redpanda
       - start
@@ -14,7 +15,6 @@ services:
       - --memory 1G
       - --mode dev-container
       # - --default-log-level=debug
-    image: docker.redpanda.com/redpandadata/redpanda:v23.3.1
     ports:
       - "9092:9092"
 
@@ -33,7 +33,7 @@ services:
     volumes:
       - ${PWD}/connect-standalone.properties:/opt/bitnami/kafka/config/connect-standalone.properties
       - ${PWD}/connect-log4j.properties:/opt/bitnami/kafka/config/connect-log4j.properties
-      - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
+      - ${PWD}/../target:/opt/connectors/kafka-eventbridge-sink
     command: ["/bin/bash","-c","env && /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties"]
 
   localstack:

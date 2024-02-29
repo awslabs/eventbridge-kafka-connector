@@ -17,13 +17,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  e2e:
+  e2e-apache:
     strategy:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
-        kafka: ["3.5.2-debian-11-r1","3.6.1-debian-11-r1"]
-        broker: ["kafka","redpanda"]
+        kafka: ["3.7.0"]
+        broker: ["apache"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -43,12 +43,38 @@ jobs:
           cache: "maven"
       - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with ${{ matrix.broker }}
         run: |
-          if [[ ${{ matrix.broker }} == "redpanda" ]]; then 
-            export COMPOSE_FILE=e2e/docker_compose_redpanda.yaml
-          fi
           echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
           mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)
-  # special treatment due to different versioning scheme
+
+  e2e-bitnami-redpanda:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        java: ["11", "17"]
+        kafka: ["3.5.2-debian-11-r1","3.6.1-debian-11-r1"]
+        broker: ["bitnami","redpanda"]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      KAFKA_VERSION: ${{ matrix.kafka }}
+      COMPOSE_FILE: "e2e/docker_compose_${{ matrix.broker }}.yaml"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@387ac29b308b003ca37ba93a6cab5eb57c8f5f93
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.java }}
+          cache: "maven"
+      - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with ${{ matrix.broker }}
+        run: |
+          echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
+          mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)
+
   e2e-confluent:
     strategy:
       matrix:
