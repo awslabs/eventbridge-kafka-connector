@@ -17,13 +17,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  e2e:
+  e2e-apache:
     strategy:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
-        kafka: ["3.6.2","3.7.0"]
-        broker: ["kafka","redpanda"]
+        kafka: ["3.7.1","3.8.0"]
+        broker: ["apache"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -43,13 +43,40 @@ jobs:
           cache: "maven"
       - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with ${{ matrix.broker }}
         run: |
-          if [[ ${{ matrix.broker }} == "redpanda" ]]; then 
-            export COMPOSE_FILE=e2e/docker_compose_redpanda.yaml
-          fi
           echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
           docker compose -f ${COMPOSE_FILE} pull
           mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)
-  # special treatment due to different versioning scheme
+
+  e2e-bitnami-redpanda:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        java: ["11", "17"]
+        kafka: ["3.6.2","3.7.0"]
+        broker: ["bitnami","redpanda"]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      KAFKA_VERSION: ${{ matrix.kafka }}
+      COMPOSE_FILE: "e2e/docker_compose_${{ matrix.broker }}.yaml"
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.java }}
+          cache: "maven"
+      - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with ${{ matrix.broker }}
+        run: |
+          echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
+          docker compose -f ${COMPOSE_FILE} pull
+          mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)
+
   e2e-confluent:
     strategy:
       matrix:

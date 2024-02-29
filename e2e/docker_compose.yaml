@@ -2,27 +2,27 @@ version: "3"
 
 services:
   kafka:
-    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.7.0}
+    image: docker.io/apache/kafka:${KAFKA_VERSION:-3.8.0}
     ports:
       - "9092:9092"
     environment:
-      ALLOW_PLAINTEXT_LISTENER: 'yes'
-      KAFKA_ENABLE_KRAFT: 'true'
-      KAFKA_CFG_NODE_ID: 1
-      KAFKA_CFG_BROKER_ID: 1
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
-      KAFKA_CFG_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
-      KAFKA_CFG_PROCESS_ROLES: 'broker,controller'
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
-      KAFKA_CFG_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
-      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
-      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_CFG_LOG_DIRS: '/tmp/kraft-combined-logs'
-    volumes:
-      - ${PWD}/log4j.properties:/opt/bitnami/kafka/config/log4j.properties
+      KAFKA_NODE_ID: 1
+      CLUSTER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT_HOST://localhost:9092,PLAINTEXT://kafka:29092'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092,PLAINTEXT://kafka:29092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
 
   connect:
-    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.7.0}
+    image: docker.io/apache/kafka:${KAFKA_VERSION:-3.8.0}
     depends_on:
       - kafka
     ports:
@@ -32,12 +32,12 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/mnt/connect-log4j.properties
       # KAFKA_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     volumes:
-      - ${PWD}/connect-standalone.properties:/opt/bitnami/kafka/config/connect-standalone.properties
-      - ${PWD}/connect-log4j.properties:/opt/bitnami/kafka/config/connect-log4j.properties
-      - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
-    command: ["/bin/bash","-c","env && /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties"]
+      - ${PWD}:/mnt
+      - ${PWD}/../target:/opt/connectors/kafka-eventbridge-sink
+    command: ["/bin/bash","-c","env && /opt/kafka/bin/connect-standalone.sh /mnt/connect-standalone.properties"]
 
   localstack:
     image: docker.io/localstack/localstack:3.5.0
