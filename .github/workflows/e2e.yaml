@@ -23,7 +23,6 @@ jobs:
         os: [ubuntu-22.04]
         java: ["11", "17"]
         kafka: ["3.7.1","3.8.0"]
-        broker: ["apache"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -41,19 +40,18 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.java }}
           cache: "maven"
-      - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with ${{ matrix.broker }}
+      - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with Apache Kafka
         run: |
           echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
           docker compose -f ${COMPOSE_FILE} pull
           mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)
 
-  e2e-bitnami-redpanda:
+  e2e-bitnami:
     strategy:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
         kafka: ["3.6.2","3.7.0"]
-        broker: ["bitnami","redpanda"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -62,7 +60,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: test
       AWS_DEFAULT_REGION: us-east-1
       KAFKA_VERSION: ${{ matrix.kafka }}
-      COMPOSE_FILE: "e2e/docker_compose_${{ matrix.broker }}.yaml"
+      COMPOSE_FILE: "e2e/docker_compose_bitnami.yaml"
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: Set up JDK ${{ matrix.java }}
@@ -71,7 +69,7 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.java }}
           cache: "maven"
-      - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with ${{ matrix.broker }}
+      - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with Apache Kafka (assembled by Bitnami)
         run: |
           echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
           docker compose -f ${COMPOSE_FILE} pull
@@ -83,7 +81,6 @@ jobs:
         os: [ubuntu-22.04]
         java: ["11", "17"]
         kafka: ["7.5.4","7.6.1"]
-        broker: ["confluent"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -101,7 +98,38 @@ jobs:
           distribution: "temurin"
           java-version: ${{ matrix.java }}
           cache: "maven"
-      - name: Run ${{ matrix.broker }} Platform ${{ matrix.kafka }} E2E Tests
+      - name: Run Confluent Kafka Platform ${{ matrix.kafka }} E2E Tests
+        run: |
+          echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
+          docker compose -f ${COMPOSE_FILE} pull
+          mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)
+
+  e2e-redpanda:
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        java: [ "11", "17" ]
+        kafka: ["3.6.2","3.7.0"]
+        redpanda: ["v23.3.1"]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      KAFKA_VERSION: ${{ matrix.kafka }}
+      REDPANDA_VERSION: ${{ matrix.redpanda }}
+      COMPOSE_FILE: "e2e/docker_compose_redpanda.yaml"
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@387ac29b308b003ca37ba93a6cab5eb57c8f5f93
+        with:
+          distribution: "temurin"
+          java-version: ${{ matrix.java }}
+          cache: "maven"
+      - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with Redpanda ${{ matrix.redpanda }}
         run: |
           echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
           docker compose -f ${COMPOSE_FILE} pull

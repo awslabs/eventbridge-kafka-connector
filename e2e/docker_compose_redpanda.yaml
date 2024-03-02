@@ -3,7 +3,7 @@ version: "3"
 services:
   # is redpanda: reusing names to not break kafka integration tests
   kafka:
-    image: docker.redpanda.com/redpandadata/redpanda:v24.1.8
+    image: docker.redpanda.com/redpandadata/redpanda:${REDPANDA_VERSION:-v24.1.8}
     command:
       - redpanda
       - start
