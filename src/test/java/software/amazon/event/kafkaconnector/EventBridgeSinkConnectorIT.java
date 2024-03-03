@@ -5,6 +5,7 @@
 package software.amazon.event.kafkaconnector;
 
 import static java.net.http.HttpClient.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -106,10 +108,13 @@ public class EventBridgeSinkConnectorIT {
     return "";
   }
 
+  private static final ToStringConsumer connectLogConsumer = new ToStringConsumer();
+
   @Container
   private static final DockerComposeContainer<?> environment =
       new DockerComposeContainer<>("e2e", getComposeFile())
           .withLogConsumer("connect", new Slf4jLogConsumer(log).withSeparateOutputStreams())
+          .withLogConsumer("connect", connectLogConsumer)
           .withEnv("AWS_ACCESS_KEY_ID", AWS_ACCESS_KEY_ID)
           .withEnv("AWS_SECRET_ACCESS_KEY", AWS_SECRET_ACCESS_KEY)
           .withEnv(KAFKA_VERSION_ENV, getKafkaVersion())
@@ -294,6 +299,22 @@ public class EventBridgeSinkConnectorIT {
     assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("topic").asText(""));
     assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("key").asText(""));
     assertEquals(jsonTestEvent, gotMessageDetailValue.get().path("value"));
+
+    log.info(
+        "polling 'connect' log containing messages: ['putEvents response: ...', 'putItems call completed: ...'] and not 'ERROR'");
+    Awaitility.await()
+        .atMost(5, TimeUnit.SECONDS)
+        .pollInterval(1, TimeUnit.SECONDS)
+        .untilAsserted(
+            () -> {
+              var connectLog = connectLogConsumer.toUtf8String();
+              assertThat(connectLog)
+                  .doesNotContain("] ERROR [")
+                  .containsPattern(
+                      "putEvents response: \\[PutEventsResultEntry\\(EventId=[0-9a-f-]+\\)]")
+                  .containsPattern(
+                      "putItems call completed: start=[^ ]+ completion=[^ ]+ durationMillis=\\d+ attempts=[12] maxRetries=\\d+");
+            });
   }
 
   private String getQueueUrl() {
