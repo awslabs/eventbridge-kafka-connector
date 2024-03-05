@@ -4,6 +4,7 @@
  */
 package software.amazon.event.kafkaconnector.util;
 
+import java.util.Objects;
 import org.apache.kafka.connect.sink.SinkRecord;
 
 public class MappedSinkRecord<T> {
@@ -22,5 +23,18 @@ public class MappedSinkRecord<T> {
 
   public T getValue() {
     return value;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(sinkRecord, value);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    var that = (MappedSinkRecord<?>) o;
+    return Objects.equals(sinkRecord, that.sinkRecord) && Objects.equals(value, that.value);
   }
 }

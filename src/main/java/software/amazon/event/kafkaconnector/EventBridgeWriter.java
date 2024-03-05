@@ -45,6 +45,8 @@ import software.amazon.event.kafkaconnector.batch.EventBridgeBatchingStrategy;
 import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 import software.amazon.event.kafkaconnector.mapping.DefaultEventBridgeMapper;
 import software.amazon.event.kafkaconnector.mapping.EventBridgeMapper;
+import software.amazon.event.kafkaconnector.offloading.EventBridgeEventDetailValueOffloadingStrategy;
+import software.amazon.event.kafkaconnector.offloading.NoOpEventBridgeEventDetailValueOffloading;
 import software.amazon.event.kafkaconnector.util.EventBridgeEventId;
 import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
 import software.amazon.event.kafkaconnector.util.PropertiesUtil;
@@ -58,6 +60,8 @@ public class EventBridgeWriter {
   private final EventBridgeAsyncClient ebClient;
   private final EventBridgeMapper eventBridgeMapper;
   private final EventBridgeBatchingStrategy batching;
+  private final EventBridgeEventDetailValueOffloadingStrategy offloading =
+      new NoOpEventBridgeEventDetailValueOffloading();
 
   /**
    * @param config Configuration of Sink Client (AWS Region, Eventbus ARN etc.)
@@ -143,9 +147,15 @@ public class EventBridgeWriter {
       return mappingResult.getErrorsAsResult();
     }
 
+    var offloadingResult = offloading.apply(mappingResult.success);
+    if (offloadingResult.success.isEmpty()) {
+      log.warn("Not sending events to EventBridge: offloading failed");
+      return offloadingResult.getErrorsAsResult();
+    }
+
     var sendItemResults =
         batching
-            .apply(mappingResult.success.stream())
+            .apply(offloadingResult.success.stream())
             .flatMap(this::sendToEventBridge)
             .collect(toList());
 
