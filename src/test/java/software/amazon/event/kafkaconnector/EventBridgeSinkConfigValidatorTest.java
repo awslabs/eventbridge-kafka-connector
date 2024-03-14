@@ -303,4 +303,23 @@ public class EventBridgeSinkConfigValidatorTest {
           EventBridgeSinkConfigValidator.validate(configValue);
         });
   }
+
+  @Test
+  public void invalidTopicDetailTypeMapperClass() {
+    var configValue = new ConfigValue(AWS_DETAIL_TYPES_MAPPER_CLASS);
+    configValue.value("com.xyz.completely.made.up");
+
+    assertThrows(
+        ConfigException.class,
+        () -> {
+          EventBridgeSinkConfigValidator.validate(configValue);
+        });
+  }
+
+  @Test
+  public void validTopicDetailTypeMapperClass() {
+    var configValue = new ConfigValue(AWS_DETAIL_TYPES_MAPPER_CLASS);
+    configValue.value("software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper");
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
 }
