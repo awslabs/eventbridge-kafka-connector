@@ -104,6 +104,11 @@ public class S3EventBridgeEventDetailValueOffloading
   }
 
   private String generateS3Key(final SinkRecord sinkRecord) throws NoSuchAlgorithmException {
+    if (sinkRecord.value() == null) {
+      logger.debug("Payload is 'null' no S3 key generated.");
+      return null;
+    }
+
     var payload = payloadOf(sinkRecord);
     var s3Key = format("arn:aws:s3:::%s/%s", bucketName, toHex(sha256Of(payload)));
 

@@ -156,6 +156,30 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   }
 
   @Test
+  public void shouldPutNothingOfSinkRecordValueWithNullJsonValue() {
+
+    var mappedSinkRecords =
+        withDefaultEventBridgeMapperMap(
+            getEventBridgeSinkConfig(),
+            new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, null, 0));
+
+    var actual =
+        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+            .apply(mappedSinkRecords);
+
+    assertThat(actual.success)
+        .hasSize(1)
+        .extracting(x -> x.getValue().detail())
+        .satisfies(
+            s ->
+                assertEquals(
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":null,\"datarefKey\":\"$.detail.value\"}",
+                    s.get(0),
+                    STRICT));
+    assertThat(actual.errors).isEmpty();
+  }
+
+  @Test
   public void shouldPutSubDocumentOfSinkRecordValueWithJsonValue() {
 
     var value =
