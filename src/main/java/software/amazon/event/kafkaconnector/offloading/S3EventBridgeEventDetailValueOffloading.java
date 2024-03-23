@@ -140,9 +140,9 @@ public class S3EventBridgeEventDetailValueOffloading
                 // be found
                 );
     private static final JsonPath jsonPathAdd = JsonPath.compile("$");
-    private static final String dataRefKey = "dataref";
 
     private final JsonPath jsonPathRemove;
+    private final String jsonPathExp;
 
     private ReplaceWithDataRefJsonTransformer(String jsonPathExp) {
       JsonPath jsonPath;
@@ -163,6 +163,7 @@ public class S3EventBridgeEventDetailValueOffloading
 
       // rewrite $.detail -> $, because PutEventsRequestEntry#detail is the sub document of $.detail
       jsonPathRemove = JsonPath.compile("$" + jsonPath.getPath().substring("$['detail']".length()));
+      this.jsonPathExp = jsonPathExp;
     }
 
     public static ReplaceWithDataRefJsonTransformer replaceWithDataRef(String jsonPathExp) {
@@ -179,8 +180,9 @@ public class S3EventBridgeEventDetailValueOffloading
         } else {
           onDeleted.accept(data.toString());
         }
-        ctx.delete(jsonPathRemove).put(jsonPathAdd, dataRefKey, dataRefValue);
+        ctx.delete(jsonPathRemove).put(jsonPathAdd, "dataref", dataRefValue);
       }
+      ctx.put(jsonPathAdd, "datarefKey", jsonPathExp);
 
       return ctx.jsonString();
     }
