@@ -23,6 +23,7 @@ import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.R
 import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -81,7 +82,9 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     var exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, jsonPathExp));
+            () ->
+                new S3EventBridgeEventDetailValueOffloading(
+                    s3Client, BUCKET, jsonPathExp, UUID::randomUUID));
     assertThat(exception).hasMessage(format("Invalid JSON Path '%s'.", jsonPathExp));
   }
 
@@ -91,7 +94,9 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     var exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, jsonPathExp));
+            () ->
+                new S3EventBridgeEventDetailValueOffloading(
+                    s3Client, BUCKET, jsonPathExp, UUID::randomUUID));
     assertThat(exception)
         .hasMessage(format("JSON Path must start with '$.detail.value' but is '%s'.", jsonPathExp));
   }
@@ -102,7 +107,9 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     var exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, jsonPathExp));
+            () ->
+                new S3EventBridgeEventDetailValueOffloading(
+                    s3Client, BUCKET, jsonPathExp, UUID::randomUUID));
     assertThat(exception)
         .hasMessage(format("JSON Path must be definite but '%s' is not.", jsonPathExp));
   }
@@ -121,7 +128,11 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
 
     var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+        new S3EventBridgeEventDetailValueOffloading(
+                s3Client,
+                BUCKET,
+                "$.detail.value",
+                () -> UUID.fromString("2d10c6f6-31e9-43b4-8706-51b4cf5534d8"))
             .apply(mappedSinkRecords);
 
     verify(s3Client).putObject(putObjectRequestCaptor.capture(), requestBodyCaptor.capture());
@@ -129,10 +140,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     assertThat(putObjectRequestCaptor.getAllValues())
         .hasSize(1)
         .extracting(PutObjectRequest::bucket, PutObjectRequest::key)
-        .containsExactly(
-            tuple(
-                "test",
-                "arn:aws:s3:::test/c36ddc438c6150350897ef33165a7a524e8138a9a6f357302e541f1fcbff1f9f"));
+        .containsExactly(tuple("test", "arn:aws:s3:::test/2d10c6f6-31e9-43b4-8706-51b4cf5534d8"));
     assertThat(requestBodyCaptor.getAllValues())
         .hasSize(1)
         .extracting(requestBodyAsString())
@@ -149,7 +157,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/c36ddc438c6150350897ef33165a7a524e8138a9a6f357302e541f1fcbff1f9f\",\"datarefPath\":\"$.detail.value\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/2d10c6f6-31e9-43b4-8706-51b4cf5534d8\",\"datarefPath\":\"$.detail.value\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
@@ -164,7 +172,11 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, null, 0));
 
     var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+        new S3EventBridgeEventDetailValueOffloading(
+                s3Client,
+                BUCKET,
+                "$.detail.value",
+                () -> UUID.fromString("fd807e9d-f92c-4c45-8bbb-f8164cc75b7e"))
             .apply(mappedSinkRecords);
 
     assertThat(actual.success)
@@ -193,7 +205,11 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
 
     var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value.orderItems")
+        new S3EventBridgeEventDetailValueOffloading(
+                s3Client,
+                BUCKET,
+                "$.detail.value.orderItems",
+                () -> UUID.fromString("d9d624dc-8452-411e-935f-edc3d62cbae2"))
             .apply(mappedSinkRecords);
 
     verify(s3Client).putObject(putObjectRequestCaptor.capture(), requestBodyCaptor.capture());
@@ -201,10 +217,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     assertThat(putObjectRequestCaptor.getAllValues())
         .hasSize(1)
         .extracting(PutObjectRequest::bucket, PutObjectRequest::key)
-        .containsExactly(
-            tuple(
-                "test",
-                "arn:aws:s3:::test/c36ddc438c6150350897ef33165a7a524e8138a9a6f357302e541f1fcbff1f9f"));
+        .containsExactly(tuple("test", "arn:aws:s3:::test/d9d624dc-8452-411e-935f-edc3d62cbae2"));
     assertThat(requestBodyCaptor.getAllValues())
         .hasSize(1)
         .extracting(requestBodyAsString())
@@ -216,7 +229,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":{\"orderCreatedTime\":\"Wed Dec 27 18:51:39 CET 2023\"},\"dataref\":\"arn:aws:s3:::test/c36ddc438c6150350897ef33165a7a524e8138a9a6f357302e541f1fcbff1f9f\",\"datarefPath\":\"$.detail.value.orderItems\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":{\"orderCreatedTime\":\"Wed Dec 27 18:51:39 CET 2023\"},\"dataref\":\"arn:aws:s3:::test/d9d624dc-8452-411e-935f-edc3d62cbae2\",\"datarefPath\":\"$.detail.value.orderItems\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
@@ -236,7 +249,11 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
 
     var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value.orderId")
+        new S3EventBridgeEventDetailValueOffloading(
+                s3Client,
+                BUCKET,
+                "$.detail.value.orderId",
+                () -> UUID.fromString("eb8421ef-3b46-4ed7-806f-7326546ed12c"))
             .apply(mappedSinkRecords);
 
     verifyNoInteractions(s3Client);
@@ -262,7 +279,11 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             new SinkRecord("topic", 0, STRING_SCHEMA, "1", STRING_SCHEMA, "Hello world", 0));
 
     var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+        new S3EventBridgeEventDetailValueOffloading(
+                s3Client,
+                BUCKET,
+                "$.detail.value",
+                () -> UUID.fromString("55443a4d-4d15-49ef-a2b0-d89657a71d8a"))
             .apply(mappedSinkRecords);
 
     verify(s3Client).putObject(putObjectRequestCaptor.capture(), requestBodyCaptor.capture());
@@ -270,10 +291,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     assertThat(putObjectRequestCaptor.getAllValues())
         .hasSize(1)
         .extracting(PutObjectRequest::bucket, PutObjectRequest::key)
-        .containsExactly(
-            tuple(
-                "test",
-                "arn:aws:s3:::test/b58f34e73579dcfb700daacadd50fa7503f1e4c6c881cb4d720fe84a57be306d"));
+        .containsExactly(tuple("test", "arn:aws:s3:::test/55443a4d-4d15-49ef-a2b0-d89657a71d8a"));
     assertThat(requestBodyCaptor.getAllValues())
         .hasSize(1)
         .extracting(requestBodyAsString())
@@ -285,7 +303,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/b58f34e73579dcfb700daacadd50fa7503f1e4c6c881cb4d720fe84a57be306d\",\"datarefPath\":\"$.detail.value\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/55443a4d-4d15-49ef-a2b0-d89657a71d8a\",\"datarefPath\":\"$.detail.value\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
@@ -300,7 +318,11 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             new SinkRecord("topic", 0, STRING_SCHEMA, "1", STRING_SCHEMA, "Hello world", 0));
 
     var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value.key")
+        new S3EventBridgeEventDetailValueOffloading(
+                s3Client,
+                BUCKET,
+                "$.detail.value.key",
+                () -> UUID.fromString("37c43d04-147f-4e83-9890-b41fad756377"))
             .apply(mappedSinkRecords);
 
     verifyNoInteractions(s3Client);
@@ -342,7 +364,8 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
 
     var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+        new S3EventBridgeEventDetailValueOffloading(
+                s3Client, BUCKET, "$.detail.value", UUID::randomUUID)
             .apply(mappedSinkRecords);
 
     assertThat(actual.success).isEmpty();
@@ -379,7 +402,8 @@ class S3EventBridgeEventDetailValueOffloadingTest {
             new SinkRecord("topic", 0, STRING_SCHEMA, "1", ORDER_SCHEMA, value, 0));
 
     var actual =
-        new S3EventBridgeEventDetailValueOffloading(s3Client, BUCKET, "$.detail.value")
+        new S3EventBridgeEventDetailValueOffloading(
+                s3Client, BUCKET, "$.detail.value", UUID::randomUUID)
             .apply(mappedSinkRecords);
 
     assertThat(actual.success).isEmpty();

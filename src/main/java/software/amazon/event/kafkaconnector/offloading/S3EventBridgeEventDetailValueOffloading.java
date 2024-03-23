@@ -8,10 +8,8 @@ import static com.jayway.jsonpath.Configuration.defaultConfiguration;
 import static com.jayway.jsonpath.Option.SUPPRESS_EXCEPTIONS;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
-import static software.amazon.awssdk.utils.BinaryUtils.toHex;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.panic;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.retry;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.failure;
@@ -20,15 +18,12 @@ import static software.amazon.event.kafkaconnector.offloading.S3EventBridgeEvent
 
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import org.apache.kafka.connect.json.JsonConverter;
-import org.apache.kafka.connect.sink.SinkRecord;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -47,22 +42,24 @@ public class S3EventBridgeEventDetailValueOffloading
   private final String bucketName;
   private final S3Client client;
   private final ReplaceWithDataRefJsonTransformer detailValueTransformer;
-  private final JsonConverter jsonConverter;
+  private final Supplier<UUID> idGenerator;
 
   public S3EventBridgeEventDetailValueOffloading(
-      final S3Client client, final String bucketName, final String jsonPathExp) {
+      final S3Client client,
+      final String bucketName,
+      final String jsonPathExp,
+      final Supplier<UUID> idGenerator) {
     this.bucketName = bucketName;
     this.client = client;
     this.detailValueTransformer = replaceWithDataRef(jsonPathExp);
-    this.jsonConverter = new JsonConverter();
-    this.jsonConverter.configure(singletonMap("schemas.enable", "false"), false);
+    this.idGenerator = idGenerator;
   }
 
   @Override
   public EventBridgeEventDetailValueOffloadingResult apply(
-      List<MappedSinkRecord<PutEventsRequestEntry>> putEventsRequestEntries) {
+      final List<MappedSinkRecord<PutEventsRequestEntry>> putEventsRequestEntries) {
 
-    final Map<Boolean, List<EventBridgeResult<PutEventsRequestEntry>>> result =
+    var result =
         putEventsRequestEntries.stream()
             .map(this::apply)
             .collect(partitioningBy(EventBridgeResult::isSuccess));
@@ -74,68 +71,47 @@ public class S3EventBridgeEventDetailValueOffloading
   }
 
   private EventBridgeResult<PutEventsRequestEntry> apply(
-      MappedSinkRecord<PutEventsRequestEntry> mappedSinkRecord) {
+      final MappedSinkRecord<PutEventsRequestEntry> item) {
+
+    var sinkRecord = item.getSinkRecord();
+    var putEventsRequestEntry = item.getValue();
+
     try {
 
-      var transformedDetail = extractJsonPathFromDetailAndPutS3Object(mappedSinkRecord);
-      var putEventsRequestEntry =
-          mappedSinkRecord.getValue().copy(it -> it.detail(transformedDetail));
+      var transformedDetail =
+          detailValueTransformer.apply(
+              putEventsRequestEntry.detail(),
+              removedContent -> putS3(generateS3KeyOf(removedContent), removedContent));
+      return success(sinkRecord, putEventsRequestEntry.copy(it -> it.detail(transformedDetail)));
 
-      return success(mappedSinkRecord.getSinkRecord(), putEventsRequestEntry);
-
-    } catch (S3Exception e) {
+    } catch (final S3Exception e) {
       // https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/handling-exceptions.html
       // https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html#ErrorCodeList
       if (e.statusCode() == 500) {
-        return failure(mappedSinkRecord.getSinkRecord(), retry(e));
+        return failure(sinkRecord, retry(e));
       }
       // TODO 429
-      return failure(mappedSinkRecord.getSinkRecord(), panic(e));
+      return failure(sinkRecord, panic(e));
     } catch (Exception e) {
-      return failure(mappedSinkRecord.getSinkRecord(), panic(e));
+      return failure(sinkRecord, panic(e));
     }
   }
 
-  private String extractJsonPathFromDetailAndPutS3Object(
-      MappedSinkRecord<PutEventsRequestEntry> mappedSinkRecord) throws NoSuchAlgorithmException {
-    var s3key = generateS3Key(mappedSinkRecord.getSinkRecord());
-    return detailValueTransformer.apply(
-        mappedSinkRecord.getValue().detail(), removedContent -> put(removedContent, s3key), s3key);
+  private String generateS3KeyOf(final String content) {
+    return format("arn:aws:s3:::%s/%s", bucketName, idGenerator.get());
   }
 
-  private String generateS3Key(final SinkRecord sinkRecord) throws NoSuchAlgorithmException {
-    if (sinkRecord.value() == null) {
-      logger.debug("Payload is 'null' no S3 key generated.");
-      return null;
-    }
-
-    var payload = payloadOf(sinkRecord);
-    var s3Key = format("arn:aws:s3:::%s/%s", bucketName, toHex(sha256Of(payload)));
-
-    logger.debug("Generated S3 key={} for payload={}.", s3Key, new String(payload));
-    return s3Key;
-  }
-
-  private byte[] payloadOf(SinkRecord sinkRecord) {
-    return jsonConverter.fromConnectData(
-        sinkRecord.topic(), sinkRecord.valueSchema(), sinkRecord.value());
-  }
-
-  private static byte[] sha256Of(byte[] payload) throws NoSuchAlgorithmException {
-    // MessageDigest is not thread safe
-    return MessageDigest.getInstance("SHA-256").digest(payload);
-  }
-
-  public void put(final String content, final String s3key) {
-    var request = PutObjectRequest.builder().bucket(bucketName).key(s3key).build();
+  public String putS3(final String key, final String content) {
+    // TODO logger
+    var request = PutObjectRequest.builder().bucket(bucketName).key(key).build();
     var response = client.putObject(request, RequestBody.fromString(content, UTF_8));
     // TODO eval response
+    return key;
   }
 
   static class ReplaceWithDataRefJsonTransformer {
 
-    private static final Logger logger =
-        LoggerFactory.getLogger(ReplaceWithDataRefJsonTransformer.class);
+    private static final Logger logger = S3EventBridgeEventDetailValueOffloading.logger;
 
     private static final Configuration configuration =
         defaultConfiguration()
@@ -149,7 +125,7 @@ public class S3EventBridgeEventDetailValueOffloading
     private final JsonPath jsonPathRemove;
     private final String jsonPathExp;
 
-    private ReplaceWithDataRefJsonTransformer(String jsonPathExp) {
+    private ReplaceWithDataRefJsonTransformer(final String jsonPathExp) {
       JsonPath jsonPath;
       try {
         jsonPath = JsonPath.compile(jsonPathExp);
@@ -175,15 +151,16 @@ public class S3EventBridgeEventDetailValueOffloading
       return new ReplaceWithDataRefJsonTransformer(jsonPathExp);
     }
 
-    public String apply(String content, Consumer<String> onDeleted, String dataRefValue) {
+    public String apply(final String content, final Function<String, String> onDeleted) {
       var ctx = JsonPath.parse(content, configuration);
       var data = ctx.read(jsonPathRemove);
       if (data != null) {
         logger.debug("Found JSON at '{}'.", jsonPathRemove.getPath());
+        String dataRefValue;
         if (data instanceof Map || data instanceof List) {
-          onDeleted.accept(JsonPath.parse(data).jsonString());
+          dataRefValue = onDeleted.apply(JsonPath.parse(data).jsonString());
         } else {
-          onDeleted.accept(data.toString());
+          dataRefValue = onDeleted.apply(data.toString());
         }
         ctx.delete(jsonPathRemove).put(jsonPathAdd, "dataref", dataRefValue);
       }
