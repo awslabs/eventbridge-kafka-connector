@@ -187,7 +187,7 @@ public class S3EventBridgeEventDetailValueOffloading
         }
         ctx.delete(jsonPathRemove).put(jsonPathAdd, "dataref", dataRefValue);
       }
-      ctx.put(jsonPathAdd, "datarefKey", jsonPathExp);
+      ctx.put(jsonPathAdd, "datarefPath", jsonPathExp);
 
       return ctx.jsonString();
     }

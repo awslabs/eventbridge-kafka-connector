@@ -149,7 +149,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/c36ddc438c6150350897ef33165a7a524e8138a9a6f357302e541f1fcbff1f9f\",\"datarefKey\":\"$.detail.value\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/c36ddc438c6150350897ef33165a7a524e8138a9a6f357302e541f1fcbff1f9f\",\"datarefPath\":\"$.detail.value\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
@@ -173,7 +173,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":null,\"datarefKey\":\"$.detail.value\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":null,\"datarefPath\":\"$.detail.value\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
@@ -216,7 +216,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":{\"orderCreatedTime\":\"Wed Dec 27 18:51:39 CET 2023\"},\"dataref\":\"arn:aws:s3:::test/c36ddc438c6150350897ef33165a7a524e8138a9a6f357302e541f1fcbff1f9f\",\"datarefKey\":\"$.detail.value.orderItems\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":{\"orderCreatedTime\":\"Wed Dec 27 18:51:39 CET 2023\"},\"dataref\":\"arn:aws:s3:::test/c36ddc438c6150350897ef33165a7a524e8138a9a6f357302e541f1fcbff1f9f\",\"datarefPath\":\"$.detail.value.orderItems\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
@@ -247,7 +247,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":{\"orderItems\":[\"item-1\",\"item-2\"],\"orderCreatedTime\":\"Wed Dec 27 18:51:39 CET 2023\"},\"datarefKey\":\"$.detail.value.orderId\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":{\"orderItems\":[\"item-1\",\"item-2\"],\"orderCreatedTime\":\"Wed Dec 27 18:51:39 CET 2023\"},\"datarefPath\":\"$.detail.value.orderId\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
@@ -285,7 +285,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/b58f34e73579dcfb700daacadd50fa7503f1e4c6c881cb4d720fe84a57be306d\",\"datarefKey\":\"$.detail.value\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"dataref\":\"arn:aws:s3:::test/b58f34e73579dcfb700daacadd50fa7503f1e4c6c881cb4d720fe84a57be306d\",\"datarefPath\":\"$.detail.value\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
@@ -311,7 +311,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
         .satisfies(
             s ->
                 assertEquals(
-                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":\"Hello world\",\"datarefKey\":\"$.detail.value.key\"}",
+                    "{\"topic\":\"topic\",\"partition\":0,\"offset\":0,\"timestamp\":null,\"timestampType\":\"NoTimestampType\",\"headers\":[],\"key\":\"1\",\"value\":\"Hello world\",\"datarefPath\":\"$.detail.value.key\"}",
                     s.get(0),
                     STRICT));
     assertThat(actual.errors).isEmpty();
