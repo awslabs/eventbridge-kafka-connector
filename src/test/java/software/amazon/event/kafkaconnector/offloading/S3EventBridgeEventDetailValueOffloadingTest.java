@@ -5,11 +5,13 @@
 package software.amazon.event.kafkaconnector.offloading;
 
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.kafka.connect.data.Schema.STRING_SCHEMA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -21,9 +23,11 @@ import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.P
 import static software.amazon.event.kafkaconnector.EventBridgeResult.ErrorType.RETRY;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
@@ -31,7 +35,6 @@ import org.apache.kafka.connect.sink.SinkRecord;
 import org.assertj.core.api.iterable.ThrowingExtractor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,10 +44,12 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
-import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.DelegatingS3AsyncClient;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.event.kafkaconnector.EventBridgeSinkConfig;
 import software.amazon.event.kafkaconnector.mapping.DefaultEventBridgeMapper;
@@ -61,10 +66,10 @@ class S3EventBridgeEventDetailValueOffloadingTest {
           .field("orderCreatedTime", STRING_SCHEMA)
           .build();
 
-  @Mock private S3Client s3Client;
+  @Mock private S3AsyncClient s3Client;
 
   @Captor private ArgumentCaptor<PutObjectRequest> putObjectRequestCaptor;
-  @Captor private ArgumentCaptor<RequestBody> requestBodyCaptor;
+  @Captor private ArgumentCaptor<AsyncRequestBody> requestBodyCaptor;
 
   @BeforeEach
   void resetMocks() {
@@ -116,6 +121,12 @@ class S3EventBridgeEventDetailValueOffloadingTest {
 
   @Test
   public void shouldPutFullSinkRecordValueWithJsonValue() {
+
+    var future = new CompletableFuture<PutObjectResponse>();
+    future.complete(null);
+
+    when(s3Client.putObject(any(PutObjectRequest.class), any(AsyncRequestBody.class)))
+        .thenReturn(future);
 
     var value =
         new Struct(ORDER_SCHEMA)
@@ -193,6 +204,12 @@ class S3EventBridgeEventDetailValueOffloadingTest {
 
   @Test
   public void shouldPutSubDocumentOfSinkRecordValueWithJsonValue() {
+
+    var future = new CompletableFuture<PutObjectResponse>();
+    future.complete(null);
+
+    when(s3Client.putObject(any(PutObjectRequest.class), any(AsyncRequestBody.class)))
+        .thenReturn(future);
 
     var value =
         new Struct(ORDER_SCHEMA)
@@ -273,6 +290,12 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   @Test
   public void shouldPutFullSinkRecordValueWithStringValue() {
 
+    var future = new CompletableFuture<PutObjectResponse>();
+    future.complete(null);
+
+    when(s3Client.putObject(any(PutObjectRequest.class), any(AsyncRequestBody.class)))
+        .thenReturn(future);
+
     var mappedSinkRecords =
         withDefaultEventBridgeMapperMap(
             getEventBridgeSinkConfig(),
@@ -340,18 +363,23 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   }
 
   @Test
-  @Disabled("decision required wich ones")
-  public void shouldReturnReportError() {}
-
-  @Test
   public void shouldReturnRetryError() {
 
-    when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-        .thenThrow(
-            S3Exception.builder()
-                .statusCode(500)
-                .awsErrorDetails(AwsErrorDetails.builder().errorCode("InternalError").build())
-                .build());
+    var s3Client =
+        new DelegatingS3AsyncClient(mock(S3AsyncClient.class)) {
+          @Override
+          public CompletableFuture<PutObjectResponse> putObject(
+              PutObjectRequest putObjectRequest, AsyncRequestBody requestBody) {
+            var future = new CompletableFuture<PutObjectResponse>();
+
+            future.completeExceptionally(
+                S3Exception.builder()
+                    .statusCode(500)
+                    .awsErrorDetails(AwsErrorDetails.builder().errorCode("InternalError").build())
+                    .build());
+            return future;
+          }
+        };
 
     var value =
         new Struct(ORDER_SCHEMA)
@@ -378,18 +406,27 @@ class S3EventBridgeEventDetailValueOffloadingTest {
   @Test
   public void shouldReturnPanicError() {
 
-    when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
-        .thenThrow(
-            S3Exception.builder()
-                .statusCode(403)
-                .awsErrorDetails(
-                    AwsErrorDetails.builder()
-                        .errorMessage(
-                            "The AWS Access Key Id you provided does not exist in our records.")
-                        .errorCode("InvalidAccessKeyId")
-                        .serviceName("S3")
-                        .build())
-                .build());
+    var s3Client =
+        new DelegatingS3AsyncClient(mock(S3AsyncClient.class)) {
+          @Override
+          public CompletableFuture<PutObjectResponse> putObject(
+              PutObjectRequest putObjectRequest, AsyncRequestBody requestBody) {
+            var future = new CompletableFuture<PutObjectResponse>();
+
+            future.completeExceptionally(
+                S3Exception.builder()
+                    .statusCode(403)
+                    .awsErrorDetails(
+                        AwsErrorDetails.builder()
+                            .errorMessage(
+                                "The AWS Access Key Id you provided does not exist in our records.")
+                            .errorCode("InvalidAccessKeyId")
+                            .serviceName("S3")
+                            .build())
+                    .build());
+            return future;
+          }
+        };
 
     var value =
         new Struct(ORDER_SCHEMA)
@@ -425,11 +462,16 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     return new EventBridgeSinkConfig(properties);
   }
 
-  private static ThrowingExtractor<RequestBody, String, IOException> requestBodyAsString() {
-    return (RequestBody requestBody) -> {
-      try (var stream = requestBody.contentStreamProvider().newStream()) {
-        return new String(stream.readAllBytes());
+  private static ThrowingExtractor<AsyncRequestBody, String, IOException> requestBodyAsString() {
+    return (AsyncRequestBody requestBody) -> {
+      final StringBuffer sb = new StringBuffer();
+      try {
+        requestBody
+            .subscribe(bb -> sb.append(StandardCharsets.UTF_8.decode(bb)))
+            .get(1000, MILLISECONDS);
+      } catch (Exception ignore) {
       }
+      return sb.toString();
     };
   }
 

@@ -6,8 +6,10 @@ package software.amazon.event.kafkaconnector.offloading;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
+import static software.amazon.awssdk.core.async.AsyncRequestBody.fromString;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.panic;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.Error.retry;
 import static software.amazon.event.kafkaconnector.EventBridgeResult.failure;
@@ -16,11 +18,12 @@ import static software.amazon.event.kafkaconnector.offloading.ReplaceWithDataRef
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
-import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.event.kafkaconnector.EventBridgeResult;
@@ -30,16 +33,17 @@ import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
 public class S3EventBridgeEventDetailValueOffloading
     implements EventBridgeEventDetailValueOffloadingStrategy {
 
+  private static final int SDK_TIMEOUT = 5000; // timeout in milliseconds for SDK calls
   private static final Logger logger =
       ContextAwareLoggerFactory.getLogger(S3EventBridgeEventDetailValueOffloading.class);
 
   private final String bucketName;
-  private final S3Client client;
+  private final S3AsyncClient client;
   private final ReplaceWithDataRefJsonTransformer detailValueTransformer;
   private final Supplier<UUID> idGenerator;
 
   public S3EventBridgeEventDetailValueOffloading(
-      final S3Client client,
+      final S3AsyncClient client,
       final String bucketName,
       final String jsonPathExp,
       final Supplier<UUID> idGenerator) {
@@ -76,6 +80,7 @@ public class S3EventBridgeEventDetailValueOffloading
           detailValueTransformer.apply(
               putEventsRequestEntry.detail(),
               removedContent -> putS3(generateS3KeyOf(removedContent), removedContent));
+
       return success(sinkRecord, putEventsRequestEntry.copy(it -> it.detail(transformedDetail)));
 
     } catch (final S3Exception e) {
@@ -84,7 +89,9 @@ public class S3EventBridgeEventDetailValueOffloading
       if (e.statusCode() == 500) {
         return failure(sinkRecord, retry(e));
       }
-      // TODO 429
+      return failure(sinkRecord, panic(e));
+    } catch (RuntimeException e) {
+      // TODO
       return failure(sinkRecord, panic(e));
     } catch (Exception e) {
       return failure(sinkRecord, panic(e));
@@ -98,8 +105,15 @@ public class S3EventBridgeEventDetailValueOffloading
   public DataRef putS3(final String key, final String content) {
     // TODO logger
     var request = PutObjectRequest.builder().bucket(bucketName).key(key).build();
-    var response = client.putObject(request, RequestBody.fromString(content, UTF_8));
-    // TODO eval response
+    try {
+      client.putObject(request, fromString(content, UTF_8)).get(SDK_TIMEOUT, MILLISECONDS);
+    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+      var cause = e.getCause();
+      if (cause instanceof S3Exception) {
+        throw (S3Exception) cause;
+      }
+      throw new RuntimeException(e);
+    }
     return DataRef.of(key);
   }
 }
