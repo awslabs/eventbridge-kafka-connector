@@ -151,7 +151,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     assertThat(putObjectRequestCaptor.getAllValues())
         .hasSize(1)
         .extracting(PutObjectRequest::bucket, PutObjectRequest::key)
-        .containsExactly(tuple("test", "arn:aws:s3:::test/2d10c6f6-31e9-43b4-8706-51b4cf5534d8"));
+        .containsExactly(tuple("test", "2d10c6f6-31e9-43b4-8706-51b4cf5534d8"));
     assertThat(requestBodyCaptor.getAllValues())
         .hasSize(1)
         .extracting(requestBodyAsString())
@@ -234,7 +234,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     assertThat(putObjectRequestCaptor.getAllValues())
         .hasSize(1)
         .extracting(PutObjectRequest::bucket, PutObjectRequest::key)
-        .containsExactly(tuple("test", "arn:aws:s3:::test/d9d624dc-8452-411e-935f-edc3d62cbae2"));
+        .containsExactly(tuple("test", "d9d624dc-8452-411e-935f-edc3d62cbae2"));
     assertThat(requestBodyCaptor.getAllValues())
         .hasSize(1)
         .extracting(requestBodyAsString())
@@ -314,7 +314,7 @@ class S3EventBridgeEventDetailValueOffloadingTest {
     assertThat(putObjectRequestCaptor.getAllValues())
         .hasSize(1)
         .extracting(PutObjectRequest::bucket, PutObjectRequest::key)
-        .containsExactly(tuple("test", "arn:aws:s3:::test/55443a4d-4d15-49ef-a2b0-d89657a71d8a"));
+        .containsExactly(tuple("test", "55443a4d-4d15-49ef-a2b0-d89657a71d8a"));
     assertThat(requestBodyCaptor.getAllValues())
         .hasSize(1)
         .extracting(requestBodyAsString())
