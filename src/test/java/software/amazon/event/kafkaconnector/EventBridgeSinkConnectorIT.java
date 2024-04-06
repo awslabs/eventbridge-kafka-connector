@@ -4,14 +4,19 @@
  */
 package software.amazon.event.kafkaconnector;
 
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.*;
 import static java.net.http.HttpClient.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.apache.kafka.clients.producer.ProducerConfig.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -19,17 +24,14 @@ import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.json.JsonSerializer;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +40,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.shaded.org.awaitility.Awaitility;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -51,7 +52,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.*;
 import software.amazon.awssdk.utils.ImmutableMap;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@TestInstance(PER_CLASS)
 @Testcontainers
 public class EventBridgeSinkConnectorIT {
   //  environment variables
@@ -102,9 +103,11 @@ public class EventBridgeSinkConnectorIT {
           .withEnv("AWS_SECRET_ACCESS_KEY", AWS_SECRET_ACCESS_KEY)
           .withEnv(KAFKA_VERSION_ENV, getKafkaVersion())
           .withExposedService(
-              CONNECT_SERVICE, CONNECT_EXPOSED_SERVICE_PORT, Wait.forListeningPort())
+              CONNECT_SERVICE, CONNECT_EXPOSED_SERVICE_PORT, Wait.forHttp("/connectors"))
           .withExposedService(
-              LOCALSTACK_SERVICE, LOCALSTACK_EXPOSED_SERVICE_PORT, Wait.forListeningPort());
+              LOCALSTACK_SERVICE,
+              LOCALSTACK_EXPOSED_SERVICE_PORT,
+              Wait.forHttp("/_localstack/health"));
 
   private SqsClient sqsClient;
   private HttpClient httpClient;
@@ -177,29 +180,27 @@ public class EventBridgeSinkConnectorIT {
   }
 
   @Test
-  public void startConnector() {
+  public void startConnector() throws IOException, InterruptedException {
     log.info("creating eventbridge sink connector");
-    try {
-      var request =
-          HttpRequest.newBuilder()
-              .uri(buildKafkaConnectURI("/connectors/"))
-              .POST(HttpRequest.BodyPublishers.ofFile(Path.of(CONNECTOR_CONFIG_LOCATION)))
-              .setHeader("Accept", "application/json")
-              .setHeader("Content-Type", "application/json")
-              .build();
+    var request =
+        HttpRequest.newBuilder()
+            .uri(buildKafkaConnectURI("/connectors/"))
+            .POST(HttpRequest.BodyPublishers.ofFile(Path.of(CONNECTOR_CONFIG_LOCATION)))
+            .setHeader("Accept", "application/json")
+            .setHeader("Content-Type", "application/json")
+            .build();
 
-      var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-      log.info("kafka connect response {}", response);
+    var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    log.info("kafka connect response {}", response);
 
-      var statusCode = response.statusCode();
-      assertTrue(statusCode >= 200 && statusCode <= 299);
-    } catch (Exception e) {
-      fail("could not create connector", e);
-    }
+    assertThat(response.statusCode())
+        .withFailMessage(() -> "could not create connector")
+        .isBetween(200, 299);
 
-    Awaitility.await()
-        .atMost(Duration.ofSeconds(5))
-        .until(
+    await()
+        .atMost(5, SECONDS)
+        .pollInterval(1, SECONDS)
+        .untilAsserted(
             () -> {
               log.info("waiting for eventbridge sink connector to enter {} state", RUNNING_STATE);
               var statusRequest =
@@ -208,8 +209,9 @@ public class EventBridgeSinkConnectorIT {
                       .setHeader("Accept", "application/json")
                       .build();
 
-              var response = httpClient.send(statusRequest, HttpResponse.BodyHandlers.ofString());
-              return response.body().contains(RUNNING_STATE);
+              var statusResponse =
+                  httpClient.send(statusRequest, HttpResponse.BodyHandlers.ofString());
+              assertThat(statusResponse.body()).contains(RUNNING_STATE);
             });
     log.info("eventbridge sink connector entered {} state", RUNNING_STATE);
   }
@@ -220,13 +222,13 @@ public class EventBridgeSinkConnectorIT {
 
     final Map<String, Object> producerConfig =
         ImmutableMap.of(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+            BOOTSTRAP_SERVERS_CONFIG,
             BOOTSTRAP_SERVER,
-            ProducerConfig.CLIENT_ID_CONFIG,
+            CLIENT_ID_CONFIG,
             UUID.randomUUID().toString(),
-            ProducerConfig.ACKS_CONFIG,
+            ACKS_CONFIG,
             "all",
-            ProducerConfig.RETRIES_CONFIG,
+            RETRIES_CONFIG,
             2);
 
     var producer =
@@ -244,43 +246,51 @@ public class EventBridgeSinkConnectorIT {
       log.info("sending kafka json test record {} to topic {}", jsonTestEvent, TEST_RESOURCE_NAME);
       producer.send(new ProducerRecord<>(TEST_RESOURCE_NAME, TEST_EVENT_KEY, jsonTestEvent)).get();
       producer.flush();
-      producer.close(Duration.of(3, ChronoUnit.SECONDS));
+      producer.close(Duration.ofSeconds(3));
     } catch (Exception e) {
       fail("could not send json test record", e);
     }
     log.info("successfully sent json test record to kafka");
 
-    var gotMessageDetailValue = new AtomicReference<JsonNode>(mapper.createObjectNode());
+    var receivedMessage = new AtomicReference<Message>(null);
 
     log.info("polling sqs queue {} for json test record", getQueueArn());
-    Awaitility.await()
-        .atMost(5, TimeUnit.SECONDS)
-        .pollInterval(1, TimeUnit.SECONDS)
+    await()
+        .atMost(5, SECONDS)
+        .pollInterval(1, SECONDS)
         .untilAsserted(
             () -> {
-              var receiveMessageResponse =
+              var response =
                   sqsClient.receiveMessage(
                       ReceiveMessageRequest.builder()
                           .queueUrl(getQueueUrl())
                           .maxNumberOfMessages(1)
                           .build());
 
-              List<Message> messages = receiveMessageResponse.messages();
-              assertEquals(1, messages.size());
+              var messages = response.messages();
+              assertThat(messages).hasSize(1);
 
-              var messageBody = messages.get(0).body();
-              log.info("received sqs message body: {}", messageBody);
-
-              var detailValue = new ObjectMapper().readTree(messageBody).path("detail");
-              log.info("retrieved eventbridge event detail value: {}", detailValue);
-              gotMessageDetailValue.set(detailValue);
+              receivedMessage.set(messages.get(0));
             });
 
-    assertTrue(gotMessageDetailValue.get().path("partition").asInt(-1) >= 0);
-    assertTrue(gotMessageDetailValue.get().path("offset").asInt(-1) >= 0);
-    assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("topic").asText(""));
-    assertEquals(TEST_EVENT_KEY, gotMessageDetailValue.get().path("key").asText(""));
-    assertEquals(jsonTestEvent, gotMessageDetailValue.get().path("value"));
+    var messageBody = receivedMessage.get().body();
+    log.info("received sqs message body: {}", messageBody);
+
+    MatcherAssert.assertThat(
+        messageBody,
+        isJson(
+            withJsonPath(
+                "$.detail",
+                allOf(
+                    hasJsonPath("partition", greaterThanOrEqualTo(0)),
+                    hasJsonPath("offset", greaterThanOrEqualTo(0)),
+                    hasJsonPath("topic", equalTo(TEST_EVENT_KEY)),
+                    hasJsonPath("key", equalTo(TEST_EVENT_KEY)),
+                    hasJsonPath(
+                        "value.sentTimestamp",
+                        equalTo(jsonTestEvent.get("sentTimestamp").asText())),
+                    hasJsonPath(
+                        "value.message", equalTo(jsonTestEvent.get("message").asText()))))));
   }
 
   private String getQueueUrl() {
