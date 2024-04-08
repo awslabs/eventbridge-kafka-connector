@@ -31,7 +31,7 @@
         <org.assertj.version>3.25.3</org.assertj.version>
         <org.awaitility.version>4.2.1</org.awaitility.version>
         <org.hamcrest.version>2.2</org.hamcrest.version>
-        <org.jacoco.version>0.8.11</org.jacoco.version>
+        <org.jacoco.version>0.8.12</org.jacoco.version>
         <org.junit.jupiter.version>5.10.2</org.junit.jupiter.version>
         <org.mockito.version>5.11.0</org.mockito.version>
         <org.slf4j.version>2.0.12</org.slf4j.version>
