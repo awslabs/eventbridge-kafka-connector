@@ -13,8 +13,12 @@ import org.apache.kafka.common.config.ConfigDef.Importance;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.slf4j.Logger;
 import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
+import software.amazon.event.kafkaconnector.offloading.S3EventBridgeEventDetailValueOffloading;
 
 public class EventBridgeSinkConfig extends AbstractConfig {
+
+  private static final Logger log =
+      ContextAwareLoggerFactory.getLogger(EventBridgeSinkConfig.class);
 
   // used in event source and IAM session role name
   static final String AWS_CONNECTOR_ID_CONFIG = "aws.eventbridge.connector.id";
@@ -33,6 +37,11 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   static final String AWS_DETAIL_TYPES_CONFIG = "aws.eventbridge.detail.types";
   static final String AWS_DETAIL_TYPES_MAPPER_CLASS = "aws.eventbridge.detail.types.mapper.class";
   static final String AWS_EVENTBUS_RESOURCES_CONFIG = "aws.eventbridge.eventbus.resources";
+  static final String AWS_OFFLOADING_S3_DEFAULT_BUCKET =
+      "aws.eventbridge.offloading.s3.default.bucket";
+  static final String AWS_OFFLOADING_DEFAULT_FIELDREF =
+      "aws.eventbridge.offloading.default.fieldref";
+
   private static final String AWS_CONNECTOR_ID_DOC =
       "The unique ID of this connector (used in the event source field to uniquely identify a connector).";
   private static final String AWS_REGION_DOC = "The AWS region of the event bus.";
@@ -53,6 +62,12 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   private static final String AWS_PROFILE_NAME_CONFIG_DOC =
       "The profile to use from the configuration and credentials files to retrieve IAM credentials";
   public static final String AWS_DETAIL_TYPES_DEFAULT = "kafka-connect-${topic}";
+  public static final String AWS_OFFLOADING_S3_DEFAULT_BUCKET_DOC =
+      "The S3 bucket to offload matched record value by JSON Path";
+  public static final String AWS_OFFLOADING_DEFAULT_FIELDREF_DOC =
+      "The JSON Path to offload record value";
+  public static final String AWS_OFFLOADING_DEFAULT_FIELDREF_DEFAULT =
+      S3EventBridgeEventDetailValueOffloading.JSON_PATH_PREFIX;
 
   private static final String AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT =
       "software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper";
@@ -81,10 +96,11 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   public final List<String> resources;
   public final int maxRetries;
   public final long retriesDelay;
-  private final Logger log = ContextAwareLoggerFactory.getLogger(EventBridgeSinkConfig.class);
   public Map<String, String> detailTypeByTopic;
   public String detailType;
   public String detailTypeMapperClass;
+  public String offloadingS3defaultBucket;
+  public String offloadingDefaultFieldRef;
 
   public EventBridgeSinkConfig(final Map<?, ?> originalProps) {
     super(CONFIG_DEF, originalProps);
@@ -100,6 +116,8 @@ public class EventBridgeSinkConfig extends AbstractConfig {
     this.retriesDelay = getInt(AWS_RETRIES_DELAY_CONFIG);
     this.resources = getList(AWS_EVENTBUS_RESOURCES_CONFIG);
     this.detailTypeMapperClass = getString(AWS_DETAIL_TYPES_MAPPER_CLASS);
+    this.offloadingS3defaultBucket = getString(AWS_OFFLOADING_S3_DEFAULT_BUCKET);
+    this.offloadingDefaultFieldRef = getString(AWS_OFFLOADING_DEFAULT_FIELDREF);
 
     var detailTypes = getList(AWS_DETAIL_TYPES_CONFIG);
     if (detailTypes.size() > 1 || detailTypes.get(0).contains(":")) {
@@ -113,7 +131,8 @@ public class EventBridgeSinkConfig extends AbstractConfig {
     log.info(
         "EventBridge properties: connectorId={} eventBusArn={} eventBusRegion={} eventBusEndpointURI={} "
             + "eventBusMaxRetries={} eventBusRetriesDelay={} eventBusResources={} "
-            + "eventBusEndpointID={} roleArn={} roleSessionName={} roleExternalID={}",
+            + "eventBusEndpointID={} roleArn={} roleSessionName={} roleExternalID={}"
+            + "offloadingS3defaultBucket={} offloadingDefaultFieldRef={}",
         connectorId,
         eventBusArn,
         region,
@@ -124,7 +143,9 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         endpointID,
         roleArn,
         connectorId,
-        externalId);
+        externalId,
+        offloadingS3defaultBucket,
+        offloadingDefaultFieldRef);
   }
 
   private static ConfigDef createConfigDef() {
@@ -154,7 +175,6 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         AWS_ROLE_EXTERNAL_ID_CONFIG_DOC);
     configDef.define(
         AWS_PROFILE_NAME_CONFIG, Type.STRING, "", Importance.MEDIUM, AWS_PROFILE_NAME_CONFIG_DOC);
-    ;
     configDef.define(
         AWS_RETRIES_CONFIG, Type.INT, AWS_RETRIES_DEFAULT, Importance.MEDIUM, AWS_RETRIES_DOC);
     configDef.define(
@@ -181,5 +201,17 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT,
         Importance.MEDIUM,
         AWS_DETAIL_TYPES_MAPPER_DOC);
+    configDef.define(
+        AWS_OFFLOADING_S3_DEFAULT_BUCKET,
+        Type.STRING,
+        "",
+        Importance.MEDIUM,
+        AWS_OFFLOADING_S3_DEFAULT_BUCKET_DOC);
+    configDef.define(
+        AWS_OFFLOADING_DEFAULT_FIELDREF,
+        Type.STRING,
+        AWS_OFFLOADING_DEFAULT_FIELDREF_DEFAULT,
+        Importance.MEDIUM,
+        AWS_OFFLOADING_DEFAULT_FIELDREF_DOC);
   }
 }

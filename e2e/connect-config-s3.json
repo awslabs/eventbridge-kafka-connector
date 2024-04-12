@@ -1,0 +1,17 @@
+{
+    "name": "eventbridge-e2e-s3",
+    "config": {
+        "auto.offset.reset": "earliest",
+        "connector.class": "software.amazon.event.kafkaconnector.EventBridgeSinkConnector",
+        "topics": "eventbridge-e2e",
+        "aws.eventbridge.connector.id": "eventbridge-e2e-connector",
+        "aws.eventbridge.eventbus.arn": "arn:aws:events:us-east-1:000000000000:event-bus/eventbridge-e2e",
+        "aws.eventbridge.region": "us-east-1",
+        "aws.eventbridge.endpoint.uri": "http://localstack:4566",
+        "aws.eventbridge.offloading.s3.default.bucket": "test-bucket",
+        "aws.eventbridge.offloading.default.fieldref": "$.detail.value.message",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter.schemas.enable": false
+    }
+}

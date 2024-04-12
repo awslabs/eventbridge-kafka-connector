@@ -27,6 +27,7 @@
         <commons-codec.version>1.17.0</commons-codec.version>
         <commons-logging.version>1.3.1</commons-logging.version>
         <connect.api.version>3.7.0</connect.api.version>
+        <equalsverifier.version>3.16.1</equalsverifier.version>
         <joda-time.version>2.12.7</joda-time.version>
         <org.apache.commons.version>3.14.0</org.apache.commons.version>
         <org.assertj.version>3.25.3</org.assertj.version>
@@ -36,6 +37,7 @@
         <org.junit.jupiter.version>5.10.2</org.junit.jupiter.version>
         <org.mockito.version>5.11.0</org.mockito.version>
         <org.slf4j.version>2.0.13</org.slf4j.version>
+        <org.skyscreamer.version>1.5.1</org.skyscreamer.version>
         <org.testcontainers.version>1.19.7</org.testcontainers.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -48,7 +50,16 @@
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path-assert</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>nl.jqno.equalsverifier</groupId>
+            <artifactId>equalsverifier</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -101,6 +112,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.skyscreamer</groupId>
+            <artifactId>jsonassert</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>auth-crt</artifactId>
         </dependency>
@@ -121,6 +137,10 @@
                     <artifactId>netty-nio-client</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -159,6 +179,11 @@
             </dependency>
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
+                <artifactId>json-path</artifactId>
+                <version>${com.jayway.jsonpath.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path-assert</artifactId>
                 <version>${com.jayway.jsonpath.version}</version>
             </dependency>
@@ -176,6 +201,11 @@
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
                 <version>${joda-time.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>nl.jqno.equalsverifier</groupId>
+                <artifactId>equalsverifier</artifactId>
+                <version>${equalsverifier.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -239,6 +269,11 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
                 <version>${org.testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.skyscreamer</groupId>
+                <artifactId>jsonassert</artifactId>
+                <version>${org.skyscreamer.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>

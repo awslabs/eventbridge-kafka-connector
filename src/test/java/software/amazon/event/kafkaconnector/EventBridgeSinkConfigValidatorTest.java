@@ -15,6 +15,8 @@ import java.util.List;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class EventBridgeSinkConfigValidatorTest {
 
@@ -321,5 +323,47 @@ public class EventBridgeSinkConfigValidatorTest {
     var configValue = new ConfigValue(AWS_DETAIL_TYPES_MAPPER_CLASS);
     configValue.value("software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper");
     EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @Test
+  public void validEmptyOffloadingS3DefaultBucket() {
+    var configValue = new ConfigValue(AWS_OFFLOADING_S3_DEFAULT_BUCKET);
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @Test
+  public void validOffloadingS3DefaultBucket() {
+    var configValue = new ConfigValue(AWS_OFFLOADING_S3_DEFAULT_BUCKET);
+    configValue.value("test");
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"s3", "s 3", "-s3", "s3-"})
+  public void invalidOffloadingS3DefaultBucket(String value) {
+    var configValue = new ConfigValue(AWS_OFFLOADING_S3_DEFAULT_BUCKET);
+    configValue.value(value);
+    assertThrows(ConfigException.class, () -> EventBridgeSinkConfigValidator.validate(configValue));
+  }
+
+  @Test
+  public void validEmptyOffloadingS3DefaultFieldRef() {
+    var configValue = new ConfigValue(AWS_OFFLOADING_DEFAULT_FIELDREF);
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @Test
+  public void validOffloadingS3DefaultFieldRef() {
+    var configValue = new ConfigValue(AWS_OFFLOADING_DEFAULT_FIELDREF);
+    configValue.value("$.detail.value.test");
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"$", "$.detail", "$.detail.[*]"})
+  public void invalidOffloadingS3DefaultFieldRef(String value) {
+    var configValue = new ConfigValue(AWS_OFFLOADING_DEFAULT_FIELDREF);
+    configValue.value(value);
+    assertThrows(ConfigException.class, () -> EventBridgeSinkConfigValidator.validate(configValue));
   }
 }

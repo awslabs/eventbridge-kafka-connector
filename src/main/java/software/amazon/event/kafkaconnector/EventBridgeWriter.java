@@ -38,6 +38,7 @@ import software.amazon.awssdk.services.eventbridge.model.EventBridgeException;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.utils.StringUtils;
 import software.amazon.event.kafkaconnector.auth.EventBridgeCredentialsProvider;
 import software.amazon.event.kafkaconnector.batch.DefaultEventBridgeBatching;
@@ -45,6 +46,9 @@ import software.amazon.event.kafkaconnector.batch.EventBridgeBatchingStrategy;
 import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 import software.amazon.event.kafkaconnector.mapping.DefaultEventBridgeMapper;
 import software.amazon.event.kafkaconnector.mapping.EventBridgeMapper;
+import software.amazon.event.kafkaconnector.offloading.EventBridgeEventDetailValueOffloadingStrategy;
+import software.amazon.event.kafkaconnector.offloading.NoOpEventBridgeEventDetailValueOffloading;
+import software.amazon.event.kafkaconnector.offloading.S3EventBridgeEventDetailValueOffloading;
 import software.amazon.event.kafkaconnector.util.EventBridgeEventId;
 import software.amazon.event.kafkaconnector.util.MappedSinkRecord;
 import software.amazon.event.kafkaconnector.util.PropertiesUtil;
@@ -58,6 +62,7 @@ public class EventBridgeWriter {
   private final EventBridgeAsyncClient ebClient;
   private final EventBridgeMapper eventBridgeMapper;
   private final EventBridgeBatchingStrategy batching;
+  private final EventBridgeEventDetailValueOffloadingStrategy offloading;
 
   /**
    * @param config Configuration of Sink Client (AWS Region, Eventbus ARN etc.)
@@ -101,6 +106,27 @@ public class EventBridgeWriter {
     this.eventBridgeMapper = new DefaultEventBridgeMapper(config);
     this.batching = new DefaultEventBridgeBatching();
 
+    if ((config.offloadingS3defaultBucket != null) && !config.offloadingS3defaultBucket.isEmpty()) {
+      var s3client =
+          S3AsyncClient.builder()
+              .credentialsProvider(credentialsProvider)
+              .endpointOverride(endpointUri)
+              .forcePathStyle(endpointUri != null)
+              .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
+              .overrideConfiguration(clientConfig)
+              .region(Region.of(this.config.region))
+              .build();
+      var bucketName = StringUtils.trim(config.offloadingS3defaultBucket);
+      var jsonPathExp = StringUtils.trim(config.offloadingDefaultFieldRef);
+
+      log.info(
+          "S3 offloading is activated with bucket: {} and JSON path: {}", bucketName, jsonPathExp);
+      offloading = new S3EventBridgeEventDetailValueOffloading(s3client, bucketName, jsonPathExp);
+    } else {
+      log.info("S3 offloading is deactivated");
+      offloading = new NoOpEventBridgeEventDetailValueOffloading();
+    }
+
     log.trace(
         "EventBridgeWriter client config: {}",
         ReflectionToStringBuilder.toString(
@@ -126,6 +152,7 @@ public class EventBridgeWriter {
     this.ebClient = ebClient;
     this.eventBridgeMapper = new DefaultEventBridgeMapper(config);
     this.batching = new DefaultEventBridgeBatching();
+    this.offloading = new NoOpEventBridgeEventDetailValueOffloading();
   }
 
   /**
@@ -143,9 +170,17 @@ public class EventBridgeWriter {
       return mappingResult.getErrorsAsResult();
     }
 
+    // NoOpEventBridgeEventDetailValueOffloading is used if
+    // `aws.eventbridge.offloading.s3.default.bucket` is not configured
+    var offloadingResult = offloading.apply(mappingResult.success);
+    if (offloadingResult.success.isEmpty()) {
+      log.warn("Not sending events to EventBridge: offloading failed");
+      return offloadingResult.getErrorsAsResult();
+    }
+
     var sendItemResults =
         batching
-            .apply(mappingResult.success.stream())
+            .apply(offloadingResult.success.stream())
             .flatMap(this::sendToEventBridge)
             .collect(toList());
 
