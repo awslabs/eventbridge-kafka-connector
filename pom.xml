@@ -21,7 +21,7 @@
         <maven.compiler.target>11</maven.compiler.target>
         <aws.java.sdk.version>2.25.35</aws.java.sdk.version>
         <aws.schema.registry.version>1.1.15</aws.schema.registry.version>
-        <ch.qos.logback.version>1.5.5</ch.qos.logback.version>
+        <ch.qos.logback.version>1.5.6</ch.qos.logback.version>
         <com.fasterxml.jackson.version>2.17.0</com.fasterxml.jackson.version>
         <com.jayway.jsonpath.version>2.9.0</com.jayway.jsonpath.version>
         <commons-codec.version>1.16.1</commons-codec.version>
