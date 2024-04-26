@@ -57,6 +57,6 @@ services:
       - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
 
   localstack:
-    image: localstack/localstack:3.3.0
+    image: localstack/localstack:3.4.0
     ports:
       - "4566"
