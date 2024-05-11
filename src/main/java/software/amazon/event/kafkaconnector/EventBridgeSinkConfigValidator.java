@@ -19,6 +19,7 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.RegionMetadata;
+import software.amazon.event.kafkaconnector.offloading.S3EventBridgeEventDetailValueOffloading;
 
 public class EventBridgeSinkConfigValidator {
 
@@ -90,6 +91,18 @@ public class EventBridgeSinkConfigValidator {
       case AWS_DETAIL_TYPES_MAPPER_CLASS:
         {
           validateDetailTypeMapperClass(configValue);
+          break;
+        }
+
+      case AWS_OFFLOADING_S3_DEFAULT_BUCKET:
+        {
+          nonStrictValidateOffloadingS3DefaultBucket(configValue);
+          break;
+        }
+
+      case AWS_OFFLOADING_DEFAULT_FIELDREF:
+        {
+          validateOffloadingDefaultFieldRef(configValue);
           break;
         }
     }
@@ -206,6 +219,27 @@ public class EventBridgeSinkConfigValidator {
           String.format(
               "key \"%s\" with value \"%s\" does not satisfy regular expression check: %s",
               key, value, pattern));
+    }
+  }
+
+  private static void nonStrictValidateOffloadingS3DefaultBucket(ConfigValue configValue) {
+    var value = (String) configValue.value();
+    if (value == null || value.isBlank()) return;
+
+    // https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html
+    var sufficient = Pattern.compile("^[a-z0-9][a-z0-9.-]{1,61}?[a-z0-9]$");
+    if (!sufficient.matcher(value).find()) {
+      throw new ConfigException(String.format("\"%s\" is not a valid S3 bucket name", value));
+    }
+  }
+
+  private static void validateOffloadingDefaultFieldRef(ConfigValue configValue) {
+    var value = (String) configValue.value();
+    if (value == null || value.isBlank()) return;
+    try {
+      S3EventBridgeEventDetailValueOffloading.validateJsonPath(value);
+    } catch (IllegalArgumentException e) {
+      throw new ConfigException(String.format("\"%s\" is not a valid offload JSON Path", value), e);
     }
   }
 }
