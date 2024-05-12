@@ -17,6 +17,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 import static software.amazon.awssdk.services.sqs.model.QueueAttributeName.QUEUE_ARN;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.jayway.jsonpath.JsonPath;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -76,6 +77,8 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
   protected final String TEST_RESOURCE_NAME = "eventbridge-e2e";
 
   protected final String TEST_BUCKET_NAME = "test-bucket";
+
+  private String connectorName = null;
 
   protected static final Logger log =
       LoggerFactory.getLogger(AbstractEventBridgeSinkConnectorIT.class);
@@ -187,6 +190,12 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
 
   protected void startConnector(final Path connectorConfig, final String connectorName)
       throws IOException, InterruptedException {
+
+    if (this.connectorName != null)
+      throw new IllegalStateException(
+          String.format("Connector with name '%s' is already started.", this.connectorName));
+    this.connectorName = connectorName;
+
     log.info(
         "creating eventbridge sink connector with connector configuration from {}",
         connectorConfig);
@@ -213,7 +222,7 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
               log.info("waiting for eventbridge sink connector to enter {} state", RUNNING_STATE);
               var statusRequest =
                   HttpRequest.newBuilder()
-                      .uri(buildKafkaConnectURI("/connectors/" + connectorName + "/status"))
+                      .uri(buildKafkaConnectURI("/connectors/" + this.connectorName + "/status"))
                       .setHeader("Accept", "application/json")
                       .build();
 
@@ -254,6 +263,22 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
 
   protected ResponseInputStream<GetObjectResponse> getS3Object(String key) {
     return s3client.getObject(GetObjectRequest.builder().bucket(TEST_BUCKET_NAME).key(key).build());
+  }
+
+  protected String connectorStateOfTask(int task) throws IOException, InterruptedException {
+    var request =
+        HttpRequest.newBuilder()
+            .uri(
+                buildKafkaConnectURI("/connectors/" + connectorName + "/tasks/" + task + "/status"))
+            .setHeader("Accept", "application/json")
+            .GET()
+            .build();
+
+    var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    log.info("kafka connector task {} state response {}", task, response);
+
+    var documentContext = JsonPath.parse(response.body());
+    return documentContext.read(JsonPath.compile("$.state"), String.class);
   }
 
   private static File getComposeFile() {

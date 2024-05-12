@@ -120,4 +120,10 @@ public class EventBridgeSinkConnectorS3IT extends AbstractEventBridgeSinkConnect
 
     assertThat(getS3Object(s3ObjectKey)).asString(UTF_8).isEqualTo("hello from kafka");
   }
+
+  @Order(3)
+  @Test
+  public void connectorTaskIsRunning() throws IOException, InterruptedException {
+    assertThat(connectorStateOfTask(0)).isEqualTo("RUNNING");
+  }
 }

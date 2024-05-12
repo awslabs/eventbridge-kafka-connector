@@ -96,4 +96,10 @@ public class EventBridgeSinkConnectorIT extends AbstractEventBridgeSinkConnector
         // order is not ensured by LocalStack
         .containsExactlyInAnyOrder("START", "STOP");
   }
+
+  @Order(3)
+  @Test
+  public void connectorTaskIsRunning() throws IOException, InterruptedException {
+    assertThat(connectorStateOfTask(0)).isEqualTo("RUNNING");
+  }
 }
