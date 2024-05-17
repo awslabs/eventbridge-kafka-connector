@@ -131,7 +131,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
     log.info(
         "EventBridge properties: connectorId={} eventBusArn={} eventBusRegion={} eventBusEndpointURI={} "
             + "eventBusMaxRetries={} eventBusRetriesDelay={} eventBusResources={} "
-            + "eventBusEndpointID={} roleArn={} roleSessionName={} roleExternalID={}"
+            + "eventBusEndpointID={} roleArn={} roleSessionName={} roleExternalID={} "
             + "offloadingDefaultS3Bucket={} offloadingDefaultFieldRef={}",
         connectorId,
         eventBusArn,
