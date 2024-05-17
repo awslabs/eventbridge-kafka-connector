@@ -106,7 +106,7 @@ public class EventBridgeWriter {
     this.eventBridgeMapper = new DefaultEventBridgeMapper(config);
     this.batching = new DefaultEventBridgeBatching();
 
-    if ((config.offloadingS3defaultBucket != null) && !config.offloadingS3defaultBucket.isEmpty()) {
+    if ((config.offloadingDefaultS3Bucket != null) && !config.offloadingDefaultS3Bucket.isEmpty()) {
       var s3client =
           S3AsyncClient.builder()
               .credentialsProvider(credentialsProvider)
@@ -116,7 +116,7 @@ public class EventBridgeWriter {
               .overrideConfiguration(clientConfig)
               .region(Region.of(this.config.region))
               .build();
-      var bucketName = StringUtils.trim(config.offloadingS3defaultBucket);
+      var bucketName = StringUtils.trim(config.offloadingDefaultS3Bucket);
       var jsonPathExp = StringUtils.trim(config.offloadingDefaultFieldRef);
 
       log.info(
@@ -171,7 +171,7 @@ public class EventBridgeWriter {
     }
 
     // NoOpEventBridgeEventDetailValueOffloading is used if
-    // `aws.eventbridge.offloading.s3.default.bucket` is not configured
+    // `aws.eventbridge.offloading.default.s3.bucket` is not configured
     var offloadingResult = offloading.apply(mappingResult.success);
     if (offloadingResult.success.isEmpty()) {
       log.warn("Not sending events to EventBridge: offloading failed");

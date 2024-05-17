@@ -94,9 +94,9 @@ public class EventBridgeSinkConfigValidator {
           break;
         }
 
-      case AWS_OFFLOADING_S3_DEFAULT_BUCKET:
+      case AWS_OFFLOADING_DEFAULT_S3_BUCKET:
         {
-          nonStrictValidateOffloadingS3DefaultBucket(configValue);
+          nonStrictValidateOffloadingDefaultS3Bucket(configValue);
           break;
         }
 
@@ -222,7 +222,7 @@ public class EventBridgeSinkConfigValidator {
     }
   }
 
-  private static void nonStrictValidateOffloadingS3DefaultBucket(ConfigValue configValue) {
+  private static void nonStrictValidateOffloadingDefaultS3Bucket(ConfigValue configValue) {
     var value = (String) configValue.value();
     if (value == null || value.isBlank()) return;
 
