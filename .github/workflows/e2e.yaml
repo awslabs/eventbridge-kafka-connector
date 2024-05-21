@@ -34,7 +34,7 @@ jobs:
       KAFKA_VERSION: ${{ matrix.kafka }}
       COMPOSE_FILE: "e2e/docker_compose.yaml"
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
         with:
@@ -66,7 +66,7 @@ jobs:
       COMPOSE_FILE: "e2e/docker_compose_confluent.yaml"
       KAFKA_VERSION: ${{ matrix.kafka }}
     steps:
-      - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
         with:
