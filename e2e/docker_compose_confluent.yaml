@@ -2,7 +2,7 @@ version: "3"
 
 services:
   kafka:
-    image: confluentinc/cp-kafka:${KAFKA_VERSION:-7.5.3}
+    image: docker.io/confluentinc/cp-kafka:${KAFKA_VERSION:-7.6.1}
     ports:
       - "9092:9092"
     environment:
@@ -24,7 +24,7 @@ services:
       CLUSTER_ID: "MkU3OEVBNTcwXTJENDM3Pk"
 
   connect:
-    image: confluentinc/cp-kafka-connect:${KAFKA_VERSION:-7.5.3}
+    image: docker.io/confluentinc/cp-kafka-connect:${KAFKA_VERSION:-7.6.1}
     depends_on:
       - kafka
     ports:

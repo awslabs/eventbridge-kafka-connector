@@ -22,7 +22,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
-        kafka: ["3.5.2-debian-11-r1","3.6.1-debian-11-r1"]
+        kafka: ["3.6.2","3.7.0"]
         broker: ["kafka","redpanda"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -47,6 +47,7 @@ jobs:
             export COMPOSE_FILE=e2e/docker_compose_redpanda.yaml
           fi
           echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
+          docker compose -f ${COMPOSE_FILE} pull
           mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)
   # special treatment due to different versioning scheme
   e2e-confluent:
@@ -54,7 +55,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         java: ["11", "17"]
-        kafka: ["7.4.4","7.5.3"]
+        kafka: ["7.5.4","7.6.1"]
         broker: ["confluent"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -76,4 +77,5 @@ jobs:
       - name: Run ${{ matrix.broker }} Platform ${{ matrix.kafka }} E2E Tests
         run: |
           echo "Running integration tests with Docker Compose file: ${COMPOSE_FILE}"
+          docker compose -f ${COMPOSE_FILE} pull
           mvn --batch-mode --no-transfer-progress --errors --update-snapshots clean verify -Drevision=$(git describe --tags --always)

@@ -77,8 +77,9 @@ mvn clean package -Drevision=$(git describe --tags --always)
 To execute the integration tests (requires [Docker](https://docker.com/)) run:
 
 ```bash
-export KAFKA_VERSION=3.6.1-debian-11-r1
+export KAFKA_VERSION=3.7.0
 export COMPOSE_FILE=e2e/docker_compose.yaml
+# docker compose -f ${COMPOSE_FILE} pull
 mvn clean verify -Drevision=$(git describe --tags --always)
 ```
 
