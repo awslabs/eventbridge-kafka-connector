@@ -32,7 +32,7 @@
         <org.apache.commons.version>3.15.0</org.apache.commons.version>
         <org.assertj.version>3.26.3</org.assertj.version>
         <org.awaitility.version>4.2.1</org.awaitility.version>
-        <org.hamcrest.version>2.2</org.hamcrest.version>
+        <org.hamcrest.version>3.0</org.hamcrest.version>
         <org.jacoco.version>0.8.12</org.jacoco.version>
         <org.junit.jupiter.version>5.10.3</org.junit.jupiter.version>
         <org.mockito.version>5.12.0</org.mockito.version>
