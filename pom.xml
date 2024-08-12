@@ -31,7 +31,7 @@
         <joda-time.version>2.12.7</joda-time.version>
         <org.apache.commons.version>3.16.0</org.apache.commons.version>
         <org.assertj.version>3.26.3</org.assertj.version>
-        <org.awaitility.version>4.2.1</org.awaitility.version>
+        <org.awaitility.version>4.2.2</org.awaitility.version>
         <org.hamcrest.version>3.0</org.hamcrest.version>
         <org.jacoco.version>0.8.12</org.jacoco.version>
         <org.junit.jupiter.version>5.10.3</org.junit.jupiter.version>
