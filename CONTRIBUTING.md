@@ -148,11 +148,11 @@ The output should look like:
 
 ```bash
 HTTP/1.1 201 Created
-Date: Fri, 24 Nov 2023 14:11:22 GMT
-Location: http://0.0.0.0:32816/connectors/eventbridge-e2e
+Date: Thu, 29 Feb 2024 19:05:29 GMT
+Location: http://0.0.0.0:32771/connectors/eventbridge-e2e
 Content-Type: application/json
 Content-Length: 688
-Server: Jetty(9.4.52.v20230823)
+Server: Jetty(9.4.53.v20231009)
 
 {"name":"eventbridge-e2e","config":{"auto.offset.reset":"earliest","connector.class":"software.amazon.event.kafkaconnector.EventBridgeSinkConnector","topics":"eventbridge-e2e","aws.eventbridge.connector.id":"eventbridge-e2e-connector","aws.eventbridge.eventbus.arn":"arn:aws:events:us-east-1:000000000000:event-bus/eventbridge-e2e","aws.eventbridge.region":"us-east-1","aws.eventbridge.endpoint.uri":"http://localstack:4566","key.converter":"org.apache.kafka.connect.storage.StringConverter","value.converter":"org.apache.kafka.connect.json.JsonConverter","value.converter.schemas.enable":"false","name":"eventbridge-e2e"},"tasks":[{"connector":"eventbridge-e2e","task":0}],"type":"sink"}
 ```
@@ -169,7 +169,7 @@ Produce a Kafka record to invoke the EventBridge sink connector:
 
 ```bash
 # open a shell in the Kafka broker container
-docker-compose -f docker_compose.yaml exec -w /opt/bitnami/kafka/bin kafka /bin/bash
+docker-compose -f docker_compose.yaml exec -w /opt/kafka/bin kafka /bin/bash
 
 # produce an event
 # replace the topic with your connector settings if needed

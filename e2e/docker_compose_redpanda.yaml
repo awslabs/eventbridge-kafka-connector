@@ -3,6 +3,7 @@ version: "3"
 services:
   # is redpanda: reusing names to not break kafka integration tests
   kafka:
+    image: docker.redpanda.com/redpandadata/redpanda:${REDPANDA_VERSION:-v24.2.1}
     command:
       - redpanda
       - start
@@ -14,27 +15,26 @@ services:
       - --memory 1G
       - --mode dev-container
       # - --default-log-level=debug
-    image: docker.redpanda.com/redpandadata/redpanda:v24.1.8
     ports:
       - "9092:9092"
 
   connect:
-    image: docker.io/bitnami/kafka:${KAFKA_VERSION:-3.6.1}
+    image: docker.io/apache/kafka:${KAFKA_VERSION:-3.8.0}
     depends_on:
       - kafka
     ports:
       - "8083"
-      # - "5005:5005
+      # - "5005:5005"
     environment:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN}
+      KAFKA_LOG4J_OPTS: -Dlog4j.configuration=file:/mnt/connect-log4j.properties
       # KAFKA_OPTS: -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
     volumes:
-      - ${PWD}/connect-standalone.properties:/opt/bitnami/kafka/config/connect-standalone.properties
-      - ${PWD}/connect-log4j.properties:/opt/bitnami/kafka/config/connect-log4j.properties
-      - ${PWD}/../target:/usr/local/share/java/connect/kafka-eventbridge-sink
-    command: ["/bin/bash","-c","env && /opt/bitnami/kafka/bin/connect-standalone.sh /opt/bitnami/kafka/config/connect-standalone.properties"]
+      - ${PWD}:/mnt
+      - ${PWD}/../target:/opt/connectors/kafka-eventbridge-sink
+    command: ["/bin/bash","-c","env && /opt/kafka/bin/connect-standalone.sh /mnt/connect-standalone.properties"]
 
   localstack:
     image: docker.io/localstack/localstack:3.5.0
