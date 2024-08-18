@@ -4,6 +4,7 @@
  */
 package software.amazon.event.kafkaconnector;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static software.amazon.awssdk.core.SdkSystemSetting.AWS_ACCESS_KEY_ID;
 import static software.amazon.awssdk.core.SdkSystemSetting.AWS_SECRET_ACCESS_KEY;
@@ -16,6 +17,7 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class EventBridgeSinkConfigValidatorTest {
@@ -69,6 +71,33 @@ public class EventBridgeSinkConfigValidatorTest {
         () -> {
           EventBridgeSinkConfigValidator.validate(configValue);
         });
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "software.amazon.event.kafkaconnector.AwsCredentialProviderImpl"})
+  public void validAwsCredentialProviderClass(String className) {
+    var configValue = new ConfigValue(AWS_CREDENTIAL_PROVIDER_CLASS);
+    configValue.value(className);
+
+    EventBridgeSinkConfigValidator.validate(configValue);
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        "xyz:Class 'xyz' can't be loaded. Ensure the class path you have specified is correct.",
+        "software.amazon.event.kafkaconnector.TestUtils$NonAwsCredentialProvider:Class 'software.amazon.event.kafkaconnector.TestUtils$NonAwsCredentialProvider' does not implement 'software.amazon.awssdk.auth.credentials.AwsCredentialsProvider'.",
+        "software.amazon.event.kafkaconnector.TestUtils$NoNoArgAwsCredentialProvider:Class 'software.amazon.event.kafkaconnector.TestUtils$NoNoArgAwsCredentialProvider' requires a no-arg constructor."
+      },
+      delimiter = ':')
+  public void invalidAwsCredentialProviderClass(String className, String expectedExceptionMessage) {
+    var configValue = new ConfigValue(AWS_CREDENTIAL_PROVIDER_CLASS);
+    configValue.value(className);
+
+    var exception =
+        assertThrows(
+            ConfigException.class, () -> EventBridgeSinkConfigValidator.validate(configValue));
+    assertThat(exception).hasMessage(expectedExceptionMessage);
   }
 
   @Test

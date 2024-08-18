@@ -40,7 +40,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.utils.StringUtils;
-import software.amazon.event.kafkaconnector.auth.EventBridgeCredentialsProvider;
+import software.amazon.event.kafkaconnector.auth.EventBridgeAwsCredentialsProviderFactory;
 import software.amazon.event.kafkaconnector.batch.DefaultEventBridgeBatching;
 import software.amazon.event.kafkaconnector.batch.EventBridgeBatchingStrategy;
 import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
@@ -90,7 +90,8 @@ public class EventBridgeWriter {
             .putAdvancedOption(USER_AGENT_PREFIX, userAgentPrefix)
             .build();
 
-    var credentialsProvider = EventBridgeCredentialsProvider.getCredentials(config);
+    var credentialsProvider =
+        EventBridgeAwsCredentialsProviderFactory.getAwsCredentialsProvider(config);
 
     var client =
         EventBridgeAsyncClient.builder()

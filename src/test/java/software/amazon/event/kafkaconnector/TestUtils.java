@@ -21,6 +21,8 @@ import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 
 public abstract class TestUtils {
@@ -108,6 +110,27 @@ public abstract class TestUtils {
 
       logger.addAppender(appender);
       return appender;
+    }
+  }
+
+  public static class NonAwsCredentialProvider {}
+
+  public static class NoNoArgAwsCredentialProvider implements AwsCredentialsProvider {
+
+    private final String sentinel;
+
+    public NoNoArgAwsCredentialProvider(String sentinel) {
+      this.sentinel = sentinel;
+    }
+
+    @Override
+    public AwsCredentials resolveCredentials() {
+      return null;
+    }
+
+    @Override
+    public String toString() {
+      return "NoNoArgAwsCredentialProvider{" + "sentinel='" + sentinel + '\'' + '}';
     }
   }
 }

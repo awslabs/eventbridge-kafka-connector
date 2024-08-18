@@ -4,6 +4,11 @@
  */
 package software.amazon.event.kafkaconnector.auth;
 
+import static software.amazon.awssdk.utils.StringUtils.isNotBlank;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import org.apache.kafka.common.Configurable;
 import org.slf4j.Logger;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -16,24 +21,52 @@ import software.amazon.event.kafkaconnector.EventBridgeSinkConfig;
 import software.amazon.event.kafkaconnector.logging.ContextAwareLoggerFactory;
 
 /** IAMUtility offers convenience functions for creating AWS IAM credential providers. */
-public class EventBridgeCredentialsProvider {
+public abstract class EventBridgeAwsCredentialsProviderFactory {
 
   private static final int stsRefreshDuration = 900; // min allowed value
   private static final Logger log =
-      ContextAwareLoggerFactory.getLogger(EventBridgeCredentialsProvider.class);
+      ContextAwareLoggerFactory.getLogger(EventBridgeAwsCredentialsProviderFactory.class);
+
+  private EventBridgeAwsCredentialsProviderFactory() {
+    // prevent instantiation
+  }
 
   /**
-   * Create an IAM credentials provider.
+   * Create an AWS credentials provider.
+   *
+   * <p>If a {@link AwsCredentialsProvider} implementing class name is provided, then an instance is
+   * created by no-arg constructor. If the class also implements {@link Configurable}, then {@link
+   * Configurable#configure(Map)} is called after instantiation.
    *
    * <p>If a role ARN is provided in the config, then an STS assume-role credentials provider is
    * created. The provider will automatically renew the assume-role session as needed.
    *
    * <p>If the role ARN is empty or null, then the default AWS credentials provider is returned.
    *
-   * @param config Configuration containing optional IAM role, session, etc.
+   * @param config Configuration containing optional {@link AwsCredentialsProvider} implementing
+   *     class name, IAM role, session, etc.
    * @return AWS credentials provider
    */
-  public static AwsCredentialsProvider getCredentials(EventBridgeSinkConfig config) {
+  public static AwsCredentialsProvider getAwsCredentialsProvider(EventBridgeSinkConfig config) {
+    if (isNotBlank(config.awsCredentialsProviderClass)) {
+      try {
+        // checks are already executed by EventBridgeSinkConnector#validate(Map)
+        var clazz = Class.forName(config.awsCredentialsProviderClass);
+        var ctor = clazz.getDeclaredConstructor();
+        var obj = ctor.newInstance();
+        if (Configurable.class.isAssignableFrom(clazz)) {
+          ((Configurable) obj).configure(config.originals());
+        }
+        return (AwsCredentialsProvider) obj;
+      } catch (final ClassNotFoundException
+          | NoSuchMethodException
+          | InvocationTargetException
+          | InstantiationException
+          | IllegalArgumentException
+          | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
     if (config.roleArn.trim().isBlank()) {
       log.info("Using aws default credentials provider");
       return getDefaultCredentialsProvider(config);
