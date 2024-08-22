@@ -19,9 +19,9 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <aws.java.sdk.version>2.26.29</aws.java.sdk.version>
+        <aws.java.sdk.version>2.27.7</aws.java.sdk.version>
         <aws.schema.registry.version>1.1.15</aws.schema.registry.version>
-        <ch.qos.logback.version>1.5.6</ch.qos.logback.version>
+        <ch.qos.logback.version>1.5.7</ch.qos.logback.version>
         <com.fasterxml.jackson.version>2.17.2</com.fasterxml.jackson.version>
         <com.jayway.jsonpath.version>2.9.0</com.jayway.jsonpath.version>
         <commons-codec.version>1.17.1</commons-codec.version>
@@ -29,14 +29,14 @@
         <connect.api.version>3.8.0</connect.api.version>
         <equalsverifier.version>3.16.1</equalsverifier.version>
         <joda-time.version>2.12.7</joda-time.version>
-        <org.apache.commons.version>3.15.0</org.apache.commons.version>
+        <org.apache.commons.version>3.16.0</org.apache.commons.version>
         <org.assertj.version>3.26.3</org.assertj.version>
-        <org.awaitility.version>4.2.1</org.awaitility.version>
+        <org.awaitility.version>4.2.2</org.awaitility.version>
         <org.hamcrest.version>3.0</org.hamcrest.version>
         <org.jacoco.version>0.8.12</org.jacoco.version>
-        <org.junit.jupiter.version>5.10.3</org.junit.jupiter.version>
+        <org.junit.jupiter.version>5.11.0</org.junit.jupiter.version>
         <org.mockito.version>5.12.0</org.mockito.version>
-        <org.slf4j.version>2.0.13</org.slf4j.version>
+        <org.slf4j.version>2.0.16</org.slf4j.version>
         <org.skyscreamer.version>1.5.3</org.skyscreamer.version>
         <org.testcontainers.version>1.20.1</org.testcontainers.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -379,7 +379,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -421,7 +421,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.3.1</version>
+                <version>3.4.0</version>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

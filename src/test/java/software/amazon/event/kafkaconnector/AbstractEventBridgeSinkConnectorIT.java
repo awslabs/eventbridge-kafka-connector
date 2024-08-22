@@ -62,6 +62,7 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
   //  environment variables
   private static final String COMPOSE_FILE_ENV = "COMPOSE_FILE";
   private static final String KAFKA_VERSION_ENV = "KAFKA_VERSION";
+  private static final String REDPANDA_VERSION_ENV = "REDPANDA_VERSION";
 
   private static final String CONNECT_SERVICE = "connect_1";
   private static final int CONNECT_EXPOSED_SERVICE_PORT = 8083;
@@ -90,6 +91,7 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
           .withEnv("AWS_ACCESS_KEY_ID", AWS_ACCESS_KEY_ID)
           .withEnv("AWS_SECRET_ACCESS_KEY", AWS_SECRET_ACCESS_KEY)
           .withEnv(KAFKA_VERSION_ENV, getKafkaVersion())
+          .withEnv(REDPANDA_VERSION_ENV, getRedpandaVersion())
           .withExposedService(
               CONNECT_SERVICE, CONNECT_EXPOSED_SERVICE_PORT, Wait.forHttp("/connectors"))
           .withExposedService(
@@ -295,6 +297,17 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
       fail(KAFKA_VERSION_ENV + " environment variable must be set");
     }
     return version;
+  }
+
+  private static String getRedpandaVersion() {
+    if (getComposeFile().toString().contains("redpanda")) {
+      var version = System.getenv(REDPANDA_VERSION_ENV);
+      if (version == null || version.trim().isEmpty()) {
+        fail(REDPANDA_VERSION_ENV + " environment variable must be set");
+      }
+      return version;
+    }
+    return "";
   }
 
   private URI getLocalstackEndpoint() {
