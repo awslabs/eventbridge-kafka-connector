@@ -90,7 +90,13 @@ public class EventBridgeSinkConfigValidator {
 
       case AWS_DETAIL_TYPES_MAPPER_CLASS:
         {
-          validateDetailTypeMapperClass(configValue);
+          validateClassExists(configValue);
+          break;
+        }
+
+      case AWS_TIME_MAPPER_CLASS:
+        {
+          validateClassExists(configValue);
           break;
         }
 
@@ -115,7 +121,7 @@ public class EventBridgeSinkConfigValidator {
     }
   }
 
-  private static void validateDetailTypeMapperClass(ConfigValue configValue) {
+  private static void validateClassExists(ConfigValue configValue) {
     var mapperClass = (String) configValue.value();
     try {
       Class.forName(mapperClass);

@@ -36,6 +36,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   static final String AWS_ROLE_EXTERNAL_ID_CONFIG = "aws.eventbridge.iam.external.id";
   static final String AWS_DETAIL_TYPES_CONFIG = "aws.eventbridge.detail.types";
   static final String AWS_DETAIL_TYPES_MAPPER_CLASS = "aws.eventbridge.detail.types.mapper.class";
+  static final String AWS_TIME_MAPPER_CLASS = "aws.eventbridge.time.mapper.class";
   static final String AWS_EVENTBUS_RESOURCES_CONFIG = "aws.eventbridge.eventbus.resources";
   static final String AWS_OFFLOADING_DEFAULT_S3_BUCKET =
       "aws.eventbridge.offloading.default.s3.bucket";
@@ -76,9 +77,13 @@ public class EventBridgeSinkConfig extends AbstractConfig {
           + "Can be defined per topic e.g., 'topic1:MyDetailType, topic2:MyDetailType', as a single expression "
           + "with a dynamic '${topic}' placeholder for all topics e.g., 'my-detail-type-${topic}', "
           + "or as a static value without additional topic information for all topics e.g., 'my-detail-type'.";
-
   private static final String AWS_DETAIL_TYPES_MAPPER_DOC =
       "Define a custom implementation class for the DetailTypeMapper interface to customize the mapping of Kafka topics or records to the EventBridge detail-type. Define full class path e.g. software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper.";
+
+  private static final String AWS_TIME_MAPPER_CLASS_DEFAULT =
+      "software.amazon.event.kafkaconnector.mapping.DefaultTimeMapper";
+  private static final String AWS_TIME_MAPPER_DOC =
+      "Provide a custom implementation class for the TimeMapper interface to customize the mapping of records to EventBridge metadata field 'time' e.g. 'software.amazon.event.kafkaconnector.mapping.DefaultTimeMapper'.";
 
   private static final String AWS_EVENTBUS_RESOURCES_DOC =
       "An optional comma-separated list of strings to add to "
@@ -99,6 +104,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   public Map<String, String> detailTypeByTopic;
   public String detailType;
   public String detailTypeMapperClass;
+  public String timeMapperClass;
   public String offloadingDefaultS3Bucket;
   public String offloadingDefaultFieldRef;
 
@@ -116,6 +122,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
     this.retriesDelay = getInt(AWS_RETRIES_DELAY_CONFIG);
     this.resources = getList(AWS_EVENTBUS_RESOURCES_CONFIG);
     this.detailTypeMapperClass = getString(AWS_DETAIL_TYPES_MAPPER_CLASS);
+    this.timeMapperClass = getString(AWS_TIME_MAPPER_CLASS);
     this.offloadingDefaultS3Bucket = getString(AWS_OFFLOADING_DEFAULT_S3_BUCKET);
     this.offloadingDefaultFieldRef = getString(AWS_OFFLOADING_DEFAULT_FIELDREF);
 
@@ -132,7 +139,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         "EventBridge properties: connectorId={} eventBusArn={} eventBusRegion={} eventBusEndpointURI={} "
             + "eventBusMaxRetries={} eventBusRetriesDelay={} eventBusResources={} "
             + "eventBusEndpointID={} roleArn={} roleSessionName={} roleExternalID={} "
-            + "offloadingDefaultS3Bucket={} offloadingDefaultFieldRef={}",
+            + "offloadingDefaultS3Bucket={} offloadingDefaultFieldRef={} detailTypeMapperClass={} timeMapperClass={}",
         connectorId,
         eventBusArn,
         region,
@@ -145,7 +152,9 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         connectorId,
         externalId,
         offloadingDefaultS3Bucket,
-        offloadingDefaultFieldRef);
+        offloadingDefaultFieldRef,
+        detailTypeMapperClass,
+        timeMapperClass);
   }
 
   private static ConfigDef createConfigDef() {
@@ -189,6 +198,12 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         AWS_DETAIL_TYPES_DEFAULT,
         Importance.MEDIUM,
         AWS_DETAIL_TYPES_DOC);
+    configDef.define(
+        AWS_TIME_MAPPER_CLASS,
+        Type.STRING,
+        AWS_TIME_MAPPER_CLASS_DEFAULT,
+        Importance.MEDIUM,
+        AWS_TIME_MAPPER_DOC);
     configDef.define(
         AWS_EVENTBUS_RESOURCES_CONFIG,
         Type.LIST,
