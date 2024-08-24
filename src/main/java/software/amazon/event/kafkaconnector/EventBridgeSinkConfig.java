@@ -32,6 +32,8 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   static final String AWS_RETRIES_CONFIG = "aws.eventbridge.retries.max";
   static final String AWS_RETRIES_DELAY_CONFIG = "aws.eventbridge.retries.delay";
   static final String AWS_PROFILE_NAME_CONFIG = "aws.eventbridge.iam.profile.name";
+  static final String AWS_CREDENTIAL_PROVIDER_CLASS =
+      "aws.eventbridge.auth.credentials_provider.class";
   static final String AWS_ROLE_ARN_CONFIG = "aws.eventbridge.iam.role.arn";
   static final String AWS_ROLE_EXTERNAL_ID_CONFIG = "aws.eventbridge.iam.external.id";
   static final String AWS_DETAIL_TYPES_CONFIG = "aws.eventbridge.detail.types";
@@ -55,6 +57,8 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   private static final int AWS_RETRIES_DELAY_DEFAULT = 200; // 200ms
   private static final String AWS_RETRIES_DELAY_DOC =
       "The retry delay in milliseconds between each retry attempt.";
+  private static final String AWS_CREDENTIAL_PROVIDER_DOC =
+      "An optional class name of the credentials provider to use. It must implement 'software.amazon.awssdk.auth.credentials.AwsCredentialsProvider' with a no-arg constructor and optionally 'org.apache.kafka.common.Configurable' to configure the provider after instantiation.";
   private static final String AWS_ROLE_ARN_DOC =
       "An optional IAM role to authenticate and send events to EventBridge. "
           + "If not specified, AWS default credentials provider is used";
@@ -95,6 +99,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
   public final String eventBusArn;
   public final String endpointID;
   public final String endpointURI;
+  public final String awsCredentialsProviderClass;
   public final String roleArn;
   public final String externalId;
   public final String profileName;
@@ -115,6 +120,7 @@ public class EventBridgeSinkConfig extends AbstractConfig {
     this.eventBusArn = getString(AWS_EVENTBUS_ARN_CONFIG);
     this.endpointID = getString(AWS_EVENTBUS_GLOBAL_ENDPOINT_ID_CONFIG);
     this.endpointURI = getString(AWS_ENDPOINT_URI_CONFIG);
+    this.awsCredentialsProviderClass = getString(AWS_CREDENTIAL_PROVIDER_CLASS);
     this.roleArn = getString(AWS_ROLE_ARN_CONFIG);
     this.externalId = getString(AWS_ROLE_EXTERNAL_ID_CONFIG);
     this.profileName = getString(AWS_PROFILE_NAME_CONFIG);
@@ -175,6 +181,12 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         "",
         Importance.MEDIUM,
         AWS_EVENTBUS_ENDPOINT_ID_DOC);
+    configDef.define(
+        AWS_CREDENTIAL_PROVIDER_CLASS,
+        Type.STRING,
+        "",
+        Importance.MEDIUM,
+        AWS_CREDENTIAL_PROVIDER_DOC);
     configDef.define(AWS_ROLE_ARN_CONFIG, Type.STRING, "", Importance.MEDIUM, AWS_ROLE_ARN_DOC);
     configDef.define(
         AWS_ROLE_EXTERNAL_ID_CONFIG,

@@ -17,8 +17,10 @@ import java.util.stream.Stream;
 import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigValue;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.regions.RegionMetadata;
+import software.amazon.awssdk.utils.StringUtils;
 import software.amazon.event.kafkaconnector.offloading.S3EventBridgeEventDetailValueOffloading;
 
 public class EventBridgeSinkConfigValidator {
@@ -59,6 +61,11 @@ public class EventBridgeSinkConfigValidator {
       case AWS_RETRIES_CONFIG:
         {
           validateEventBusRetries(configValue);
+          break;
+        }
+      case AWS_CREDENTIAL_PROVIDER_CLASS:
+        {
+          validateAwsCredentialProviderClass(configValue);
           break;
         }
       case AWS_ROLE_ARN_CONFIG:
@@ -133,6 +140,32 @@ public class EventBridgeSinkConfigValidator {
 
   private static void validateURI(ConfigValue configValue) {
     // TODO: validate optional URI here or when constructing client in task?
+  }
+
+  private static void validateAwsCredentialProviderClass(ConfigValue configValue) {
+    var requiredInterface = AwsCredentialsProvider.class;
+    var className = (String) configValue.value();
+    if (StringUtils.isNotBlank(className)) {
+      try {
+        var clazz = Class.forName((String) configValue.value());
+        if (!requiredInterface.isAssignableFrom(clazz)) {
+          throw new ConfigException(
+              "Class '"
+                  + className
+                  + "' does not implement '"
+                  + requiredInterface.getCanonicalName()
+                  + "'.");
+        }
+        clazz.getDeclaredConstructor();
+      } catch (ClassNotFoundException e) {
+        throw new ConfigException(
+            "Class '"
+                + className
+                + "' can't be loaded. Ensure the class path you have specified is correct.");
+      } catch (NoSuchMethodException e) {
+        throw new ConfigException("Class '" + className + "' requires a no-arg constructor.");
+      }
+    }
   }
 
   private static void validateBusArn(ConfigValue configValue) {
