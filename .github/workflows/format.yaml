@@ -7,6 +7,7 @@ on:
 
   pull_request:
     branches: ["main", "release-*"]
+  merge_group:
 
 concurrency:
   group: java-format-${{ github.head_ref || github.run_id }}

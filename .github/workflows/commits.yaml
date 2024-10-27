@@ -4,6 +4,7 @@ permissions: {}
 on:
   pull_request:
     branches: ["main", "release-*"]
+  merge_group:
 
 concurrency:
   group: commit-lint-${{ github.head_ref || github.run_id }}
