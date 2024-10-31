@@ -31,6 +31,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.connect.json.JsonSerializer;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
@@ -38,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -84,8 +84,7 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
   protected static final Logger log =
       LoggerFactory.getLogger(AbstractEventBridgeSinkConnectorIT.class);
 
-  @Container
-  private static final DockerComposeContainer<?> environment =
+  private final DockerComposeContainer<?> environment =
       new DockerComposeContainer<>("e2e", getComposeFile())
           .withLogConsumer("connect", new Slf4jLogConsumer(log).withSeparateOutputStreams())
           .withEnv("AWS_ACCESS_KEY_ID", AWS_ACCESS_KEY_ID)
@@ -120,6 +119,16 @@ public abstract class AbstractEventBridgeSinkConnectorIT {
           new JsonSerializer());
 
   @BeforeAll
+  public void setup() {
+    environment.start();
+    createAwsResources();
+  }
+
+  @AfterAll
+  public void tearDown() {
+    environment.stop();
+  }
+
   public void createAwsResources() {
     log.info("creating aws localstack resources");
     var credentials =
