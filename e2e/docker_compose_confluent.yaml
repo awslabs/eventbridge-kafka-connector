@@ -2,7 +2,7 @@ version: "3"
 
 services:
   kafka:
-    image: docker.io/confluentinc/cp-kafka:${KAFKA_VERSION:-7.6.1}
+    image: docker.io/confluentinc/cp-kafka:${KAFKA_VERSION:-7.7.1}
     ports:
       - "9092:9092"
     environment:
@@ -24,7 +24,7 @@ services:
       CLUSTER_ID: "MkU3OEVBNTcwXTJENDM3Pk"
 
   connect:
-    image: docker.io/confluentinc/cp-kafka-connect:${KAFKA_VERSION:-7.6.1}
+    image: docker.io/confluentinc/cp-kafka-connect:${KAFKA_VERSION:-7.7.1}
     depends_on:
       - kafka
     ports:
@@ -44,7 +44,7 @@ services:
       CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       CONNECT_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       # CLASSPATH required due to CC-2422
-      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-${KAFKA_VERSION:-7.5.3}.jar
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-${KAFKA_VERSION:-7.7.1}.jar
       CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
       CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components,/usr/local/share/java/connect"
