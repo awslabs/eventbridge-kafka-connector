@@ -14,7 +14,7 @@
         <aws.schema.registry.version>1.1.15</aws.schema.registry.version>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <kafka.client.version>3.4.0</kafka.client.version>
+        <kafka.client.version>3.7.1</kafka.client.version>
         <aws.java.sdk.version>2.20.75</aws.java.sdk.version>
         <log4j.version>2.20.0</log4j.version>
     </properties>
