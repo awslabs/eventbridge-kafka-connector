@@ -70,7 +70,7 @@ public class EventBridgeWriter {
   public EventBridgeWriter(EventBridgeSinkConfig config) {
     this.config = config;
 
-    var endpointUri =
+    var ebEndpointUri =
         StringUtils.trim(this.config.endpointURI).isBlank()
             ? null
             : URI.create(this.config.endpointURI);
@@ -96,7 +96,7 @@ public class EventBridgeWriter {
     var client =
         EventBridgeAsyncClient.builder()
             .region(Region.of(this.config.region))
-            .endpointOverride(endpointUri)
+            .endpointOverride(ebEndpointUri)
             .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
             .overrideConfiguration(clientConfig)
             .credentialsProvider(credentialsProvider)
@@ -108,11 +108,17 @@ public class EventBridgeWriter {
     this.batching = new DefaultEventBridgeBatching();
 
     if ((config.offloadingDefaultS3Bucket != null) && !config.offloadingDefaultS3Bucket.isEmpty()) {
+
+      var s3EndpointUri =
+          StringUtils.trim(this.config.offloadingDefaultS3EndpointURI).isBlank()
+              ? null
+              : URI.create(this.config.offloadingDefaultS3EndpointURI);
+
       var s3client =
           S3AsyncClient.builder()
               .credentialsProvider(credentialsProvider)
-              .endpointOverride(endpointUri)
-              .forcePathStyle(endpointUri != null)
+              .endpointOverride(s3EndpointUri)
+              .forcePathStyle(s3EndpointUri != null)
               .httpClientBuilder(AwsCrtAsyncHttpClient.builder())
               .overrideConfiguration(clientConfig)
               .region(Region.of(this.config.region))
@@ -121,7 +127,10 @@ public class EventBridgeWriter {
       var jsonPathExp = StringUtils.trim(config.offloadingDefaultFieldRef);
 
       log.info(
-          "S3 offloading is activated with bucket: {} and JSON path: {}", bucketName, jsonPathExp);
+          "S3 offloading is activated with bucket: {}, JSON path: {} and endpoint override: {}",
+          bucketName,
+          jsonPathExp,
+          s3EndpointUri == null ? "-" : s3EndpointUri);
       offloading = new S3EventBridgeEventDetailValueOffloading(s3client, bucketName, jsonPathExp);
     } else {
       log.info("S3 offloading is deactivated");
