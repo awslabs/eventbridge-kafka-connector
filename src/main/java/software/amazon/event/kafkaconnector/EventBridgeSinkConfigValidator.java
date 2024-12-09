@@ -107,6 +107,12 @@ public class EventBridgeSinkConfigValidator {
           break;
         }
 
+      case AWS_OFFLOADING_DEFAULT_S3_ENDPOINT_URI:
+        {
+          validateURI(configValue);
+          break;
+        }
+
       case AWS_OFFLOADING_DEFAULT_S3_BUCKET:
         {
           nonStrictValidateOffloadingDefaultS3Bucket(configValue);

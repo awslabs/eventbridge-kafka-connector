@@ -8,6 +8,7 @@
         "aws.eventbridge.eventbus.arn": "arn:aws:events:us-east-1:000000000000:event-bus/eventbridge-e2e",
         "aws.eventbridge.region": "us-east-1",
         "aws.eventbridge.endpoint.uri": "http://localstack:4566",
+        "aws.eventbridge.offloading.default.s3.endpoint.uri": "http://localstack:4566",
         "aws.eventbridge.offloading.default.s3.bucket": "test-bucket",
         "aws.eventbridge.offloading.default.fieldref": "$.detail.value.message",
         "key.converter": "org.apache.kafka.connect.storage.StringConverter",
