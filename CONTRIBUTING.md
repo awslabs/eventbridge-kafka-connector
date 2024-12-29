@@ -40,7 +40,7 @@ GitHub provides additional document on [forking a repository](https://help.githu
 [creating a pull request](https://help.github.com/articles/creating-a-pull-request/).
 
 
-### Running Tests in a local Environment (Docker Compose)
+### Running Tests in a local Environment
 
 #### Unit Tests
 
@@ -61,7 +61,7 @@ mvn com.spotify.fmt:fmt-maven-plugin:check
 mvn com.mycila:license-maven-plugin:check
 ```
 
-> **Note**  
+> [!NOTE]  
 > When you run `mvn package` the formatter will auto-format files.
 
 #### Packaging
@@ -79,11 +79,10 @@ To execute the integration tests (requires [Docker](https://docker.com/)) run:
 ```bash
 export KAFKA_VERSION=3.9.0
 export COMPOSE_FILE=e2e/docker_compose.yaml
-# docker compose -f ${COMPOSE_FILE} pull
 mvn clean verify -Drevision=$(git describe --tags --always)
 ```
 
-> **Note**  
+> [!NOTE]  
 > If Docker cannot be used, alternative solutions, such as [`Finch`](https://github.com/runfinch/finch) or
 > [`Podman`](https://podman.io/) can be tried (untested).
 
@@ -92,7 +91,7 @@ mvn clean verify -Drevision=$(git describe --tags --always)
 Requirements:
 
 - Maven
-- Docker and `docker-compose` CLI
+- Docker
 - `curl`
 - A way to create AWS resources (unless LocalStack is used), e.g. using `aws` CLI
 
@@ -100,7 +99,7 @@ These steps assume you are familiar with EventBridge Event Buses, Rules, and Tar
 [documentation](https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-what-is.html) for instructions how to set up
 those resources. 
 
-If [Docker](https://docker.com/) and the `docker-compose` CLI is installed, a Kafka test environment can be created
+If [Docker](https://docker.com/) CLI is installed, a Kafka test environment can be created
 locally e.g., to create the local environment:
 
 ```bash
@@ -121,13 +120,18 @@ export AWS_SECRET_ACCESS_KEY=ABCDEFGHIJKLMNOPQRST
 export AWS_SESSION_TOKEN=ABCDEFGHIJKLMNOPQRST
 ```
 
+> [!TIP]  
+> The next steps assume that you have Docker installed which provides the `docker compose` CLI. If the `docker
+> compose` CLI is not available, you can install it
+> [manually](https://docs.docker.com/compose/install/linux/#install-the-plugin-manually).
+
 The following command removes any previous resources and creates the local test environment:
 
 ```bash
-docker-compose -f docker_compose.yaml down --remove-orphans -v && docker-compose -f docker_compose.yaml up
+docker compose -f docker_compose.yaml down --remove-orphans -v && docker compose -f docker_compose.yaml up
 ```
 
-> **Note**  
+> [!NOTE]  
 > The Docker Compose environment includes [LocalStack](https://localstack.cloud/) to emulate AWS resources, such as SQS and EventBridge. If you want to use LocalStack use `test` for the access key id and secret environment variable and pass `--endpoint-url=http://localhost:4566` to your `aws` CLI commands.
 
 Move on to next section when you see following lines:
@@ -141,7 +145,7 @@ Change the JSON configuration example `connect-config.json` (uses LocalStack def
 environment. In a separate terminal (within the `e2e` folder) deploy the connector:
 
 ```bash
-curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://$(docker-compose -f docker_compose.yaml port connect 8083)/connectors/ -d @connect-config.json
+curl -i --fail-with-body -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://$(docker compose -f docker_compose.yaml port connect 8083)/connectors/ -d @connect-config.json
 ```
 
 The output should look like:
@@ -169,7 +173,7 @@ Produce a Kafka record to invoke the EventBridge sink connector:
 
 ```bash
 # open a shell in the Kafka broker container
-docker-compose -f docker_compose.yaml exec -w /opt/kafka/bin kafka /bin/bash
+docker compose -f docker_compose.yaml exec -w /opt/kafka/bin kafka /bin/bash
 
 # produce an event
 # replace the topic with your connector settings if needed
@@ -216,7 +220,7 @@ The output event should look similar to the below:
 To tear down the environment run:
 
 ```bash
-docker-compose -f docker_compose.yaml down --remove-orphans -v
+docker compose -f docker_compose.yaml down --remove-orphans -v
 ```
 
 ##### Remote Debug the Connector
