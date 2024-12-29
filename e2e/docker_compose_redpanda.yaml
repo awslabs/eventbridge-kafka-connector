@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   # is redpanda: reusing names to not break kafka integration tests
   kafka:
