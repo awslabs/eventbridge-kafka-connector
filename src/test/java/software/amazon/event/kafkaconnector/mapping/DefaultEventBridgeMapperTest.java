@@ -5,6 +5,7 @@
 package software.amazon.event.kafkaconnector.mapping;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static software.amazon.event.kafkaconnector.mapping.TestDetailTypeMapper.DETAIL_TYPE;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +41,21 @@ public class DefaultEventBridgeMapperTest {
     var result = mapper.map(List.of(defaultSinkRecord()));
     var putEventsRequestEntry = result.success.stream().findFirst().get();
     assertThat(putEventsRequestEntry.getValue().time()).isEqualTo("1981-12-24T00:00:00Z");
+  }
+
+  @Test
+  @DisplayName(
+      "Mapping with DetailTypeMapperClass parameter defined should give custom detail type value")
+  public void mapWithSpecifiedDetailTypeMapper() {
+    var props = new HashMap<>(defaultConfig());
+    props.put(
+        "aws.eventbridge.detail.types.mapper.class",
+        "software.amazon.event.kafkaconnector.mapping.TestDetailTypeMapper");
+    var config = new EventBridgeSinkConfig(props);
+    var mapper = new DefaultEventBridgeMapper(config);
+    var result = mapper.map(List.of(defaultSinkRecord()));
+    var putEventsRequestEntry = result.success.stream().findFirst().get();
+    assertThat(putEventsRequestEntry.getValue().detailType()).isEqualTo(DETAIL_TYPE);
   }
 
   @NotNull

@@ -61,10 +61,9 @@ public class S3EventBridgeEventDetailValueOffloading
   private static final Configuration jsonPathConfiguration =
       defaultConfiguration()
           .addOptions(
-              SUPPRESS_EXCEPTIONS // suppress exception otherwise
-              // com.jayway.jsonpath.ReadContext#read throws an exception if JSON path could not
-              // be found
-              );
+              // suppress exception otherwise com.jayway.jsonpath.ReadContext#read throws an
+              // exception if JSON path could not be found
+              SUPPRESS_EXCEPTIONS);
 
   private final String bucketName;
   private final S3AsyncClient client;
