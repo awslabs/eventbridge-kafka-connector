@@ -77,6 +77,8 @@ public class EventBridgeSinkConfig extends AbstractConfig {
       "The JSON Path to offload record value";
   public static final String AWS_OFFLOADING_DEFAULT_FIELDREF_DEFAULT =
       S3EventBridgeEventDetailValueOffloading.JSON_PATH_PREFIX;
+  public static final String AWS_DETAIL_TYPES_MAPPER_JSON_PATH_MAPPER_FIELDREF =
+      "aws.eventbridge.detail.types.jsonpathmapper.fieldref";
 
   private static final String AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT =
       "software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper";
@@ -85,6 +87,9 @@ public class EventBridgeSinkConfig extends AbstractConfig {
           + "Can be defined per topic e.g., 'topic1:MyDetailType, topic2:MyDetailType', as a single expression "
           + "with a dynamic '${topic}' placeholder for all topics e.g., 'my-detail-type-${topic}', "
           + "or as a static value without additional topic information for all topics e.g., 'my-detail-type'.";
+  private static final String AWS_DETAIL_TYPES_MAPPER_JSON_PATH_MAPPER_FIELDREF_DOC =
+      "The JSON Path to extract the detail type from the record when using JsonPathDetailTypeMapper. "
+          + "Must be a definite path.";
   private static final String AWS_DETAIL_TYPES_MAPPER_DOC =
       "Define a custom implementation class for the DetailTypeMapper interface to customize the mapping of Kafka topics or records to the EventBridge detail-type. Define full class path e.g. software.amazon.event.kafkaconnector.mapping.DefaultDetailTypeMapper.";
 
@@ -236,6 +241,12 @@ public class EventBridgeSinkConfig extends AbstractConfig {
         AWS_DETAIL_TYPES_MAPPER_CLASS_DEFAULT,
         Importance.MEDIUM,
         AWS_DETAIL_TYPES_MAPPER_DOC);
+    configDef.define(
+        AWS_DETAIL_TYPES_MAPPER_JSON_PATH_MAPPER_FIELDREF,
+        Type.STRING,
+        "",
+        Importance.MEDIUM,
+        AWS_DETAIL_TYPES_MAPPER_JSON_PATH_MAPPER_FIELDREF_DOC);
     configDef.define(
         AWS_OFFLOADING_DEFAULT_S3_ENDPOINT_URI,
         Type.STRING,

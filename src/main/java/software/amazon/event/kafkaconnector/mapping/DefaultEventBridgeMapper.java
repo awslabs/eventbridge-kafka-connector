@@ -74,7 +74,7 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
       return detailTypeMapper;
     } catch (Exception e) {
       // This will already be verified in the Config Validator
-      throw new RuntimeException("Topic to Detail-Type Mapper Class can't be loaded.");
+      throw new RuntimeException("Topic to Detail-Type Mapper Class can't be loaded: ", e);
     }
   }
 
@@ -85,7 +85,7 @@ public class DefaultEventBridgeMapper implements EventBridgeMapper {
       return (TimeMapper) constructor.newInstance();
     } catch (Exception e) {
       // This will already be verified in the Config Validator
-      throw new RuntimeException("Time Mapper Class can't be loaded.");
+      throw new RuntimeException("Time Mapper Class can't be loaded: ", e);
     }
   }
 }
