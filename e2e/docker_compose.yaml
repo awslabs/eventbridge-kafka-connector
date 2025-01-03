@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   kafka:
     image: docker.io/apache/kafka:${KAFKA_VERSION:-3.9.0}

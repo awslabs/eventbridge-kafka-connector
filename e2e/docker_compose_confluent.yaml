@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   kafka:
     image: docker.io/confluentinc/cp-kafka:${KAFKA_VERSION:-7.7.1}
