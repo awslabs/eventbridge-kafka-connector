@@ -44,6 +44,17 @@ GitHub provides additional document on [forking a repository](https://help.githu
 
 #### Unit Tests
 
+Before running the tests, ensure you have JAVA_HOME set to a compatible JDK installation (JDK 11 or later is required). For example:
+
+```bash
+# macOS example for Amazon Corretto 17
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/amazon-corretto-17.jdk/Contents/Home
+# Linux example OpenJDK 17
+export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+```
+
+Note: When using JDK 17 or later, setting JAVA_HOME is especially important to avoid Mockito mocking errors during testing.
+
 To verify unit tests pass run:
 
 ```bash
