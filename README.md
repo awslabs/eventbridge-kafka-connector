@@ -422,6 +422,60 @@ event without offloading information:
 > If offloading matches a key with an empty object `{}` or array `[]`, these values are considered a match and will be
 > offloaded just as any other matched value.
 
+### Records with `null` Keys and Tombstone Handling
+
+Records with `null` keys are processed and included in the EventBridge event detail structure. The `null` key is
+preserved in the event, allowing downstream processors to know the original record had no key.
+
+Records with `null` values (*tombstones*) are processed and included in the EventBridge event detail structure. The
+`null` value is preserved, allowing downstream EventBridge rules and targets to handle tombstone records according to
+their requirements. This is particularly useful for:
+  - Change Data Capture (CDC) scenarios where tombstones indicate record deletions
+  - Applications that need to track when values are explicitly set to `null`
+
+Example EventBridge event structure for `null` keys and tombstone records:
+
+```json
+{
+    // snip ...
+    "detail": {
+        "topic": "json-values-topic",
+        "partition": 0,
+        "offset": 0,
+        "timestamp": 1684841916831,
+        "timestampType": "CreateTime",
+        "headers": [],
+        "key": null,             // null key example
+        "value": null            // tombstone record example
+    }
+}
+```
+
+#### Example EventBridge Rule Filtering Patterns
+
+Only match events where both, `key` and `value` are `null`:
+
+```json
+{
+    "detail": {
+        "topic": ["json-values-topic"],
+        "key": [null],
+        "value": [null]
+    }
+}
+````
+
+Ignore tombstone events:
+
+```json
+{
+    "detail": {
+        "value": [{"anything-but": null}]
+    }
+}
+
+```
+
 ### Retry Behavior
 
 By default, the connector is configured to retry failed [`PutEvents`
