@@ -38,6 +38,6 @@ services:
     command: ["/bin/bash","-c","env && /opt/kafka/bin/connect-standalone.sh /mnt/connect-standalone.properties"]
 
   localstack:
-    image: docker.io/localstack/localstack:3.5.0
+    image: docker.io/localstack/localstack:3.8.1
     ports:
       - "4566" # LocalStack Gateway
