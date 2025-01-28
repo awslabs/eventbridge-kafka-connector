@@ -12,6 +12,7 @@ import org.apache.kafka.common.Configurable;
 import org.slf4j.Logger;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.profiles.ProfileFileSupplier;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -82,13 +83,25 @@ public abstract class EventBridgeAwsCredentialsProviderFactory {
     return getStsAssumeRoleCredentialsProvider(config);
   }
 
+  // Temporary workaround until AWS SDK issue is fixed:
+  // https://github.com/aws/aws-sdk-java-v2/issues/5635
+  private static ProfileFileSupplier wrappedProfileDefaultSupplier() {
+    return () -> {
+      try {
+        return ProfileFileSupplier.defaultSupplier().get();
+      } catch (NullPointerException e) {
+        return ProfileFile.defaultProfileFile();
+      }
+    };
+  }
+
   private static DefaultCredentialsProvider getDefaultCredentialsProvider(
       EventBridgeSinkConfig config) {
     var builder = DefaultCredentialsProvider.builder();
 
     // Leverage DefaultSupplier to automatically reload credentials on file refresh
     // https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials-profiles.html#profile-reloading
-    builder.profileFile(ProfileFileSupplier.defaultSupplier());
+    builder.profileFile(wrappedProfileDefaultSupplier());
 
     var profileName = config.profileName;
     if (!profileName.isBlank()) {

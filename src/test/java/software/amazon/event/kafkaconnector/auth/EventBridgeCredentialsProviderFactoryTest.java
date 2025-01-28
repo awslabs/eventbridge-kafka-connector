@@ -5,12 +5,15 @@
 package software.amazon.event.kafkaconnector.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.event.kafkaconnector.AwsCredentialProviderImpl;
 import software.amazon.event.kafkaconnector.EventBridgeSinkConfig;
@@ -63,5 +66,21 @@ public class EventBridgeCredentialsProviderFactoryTest {
 
     assertThat(provider).isInstanceOf(AwsCredentialsProvider.class);
     assertThat(provider).isExactlyInstanceOf(AwsCredentialProviderImpl.class);
+  }
+
+  @Test
+  @Disabled // Todo: Excluded because it is environment specific (Requires no credentials and config
+  // files present to work). Will keep to verify once AWS SDK issue is fixed:
+  // https://github.com/aws/aws-sdk-java-v2/issues/5635
+  public void shouldNotGetSDKClientExceptionWithNull() {
+    var props = new HashMap<>(commonProps);
+    var provider =
+        EventBridgeAwsCredentialsProviderFactory.getAwsCredentialsProvider(
+            new EventBridgeSinkConfig(props));
+    var exception = assertThrows(SdkClientException.class, provider::resolveCredentials);
+
+    assertThat(exception)
+        .hasMessageNotContaining(
+            "Cannot invoke \"java.nio.file.Path.getFileSystem()\" because \"path\" is null");
   }
 }

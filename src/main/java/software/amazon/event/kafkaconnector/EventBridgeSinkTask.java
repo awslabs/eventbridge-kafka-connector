@@ -138,7 +138,8 @@ public class EventBridgeSinkTask extends SinkTask {
                   + "errorMessage={}",
               attempts,
               config.maxRetries,
-              cause.getMessage());
+              message,
+              cause);
           throw new ConnectException(cause);
         }
 
@@ -146,13 +147,14 @@ public class EventBridgeSinkTask extends SinkTask {
             "Retrying failed putItems call: attempts={} maxRetries={} errorMessage={}",
             attempts,
             config.maxRetries,
-            cause.getMessage());
+            message,
+            cause);
 
         return Stream.of(errorRecord.getSinkRecord());
 
       case PANIC:
         log.error(
-            "Non-retryable failed put call: failing connector errorMessage={}", cause.getMessage());
+            "Non-retryable failed put call: failing connector errorMessage={}", message, cause);
         throw new ConnectException(cause);
     }
     return Stream.empty();
