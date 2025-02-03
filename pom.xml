@@ -24,7 +24,7 @@
         <ch.qos.logback.version>1.5.16</ch.qos.logback.version>
         <com.fasterxml.jackson.version>2.18.2</com.fasterxml.jackson.version>
         <com.jayway.jsonpath.version>2.9.0</com.jayway.jsonpath.version>
-        <commons-codec.version>1.17.2</commons-codec.version>
+        <commons-codec.version>1.18.0</commons-codec.version>
         <commons-logging.version>1.3.4</commons-logging.version>
         <connect.api.version>3.9.0</connect.api.version>
         <equalsverifier.version>3.18.2</equalsverifier.version>
