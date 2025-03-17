@@ -27,7 +27,7 @@
         <commons-codec.version>1.18.0</commons-codec.version>
         <commons-logging.version>1.3.5</commons-logging.version>
         <connect.api.version>3.9.0</connect.api.version>
-        <equalsverifier.version>3.19.1</equalsverifier.version>
+        <equalsverifier.version>3.19.2</equalsverifier.version>
         <joda-time.version>2.13.1</joda-time.version>
         <org.apache.commons.version>3.17.0</org.apache.commons.version>
         <org.assertj.version>3.27.3</org.assertj.version>
