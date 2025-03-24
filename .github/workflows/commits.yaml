@@ -12,6 +12,8 @@ concurrency:
 
 jobs:
   commits:
+    # dependabot won't conform with commits, keep CI checks green by ignoring this soft-check
+    if: ${{ !contains(github.actor, 'dependabot') }}
     strategy:
       matrix:
         os: [ubuntu-22.04]
