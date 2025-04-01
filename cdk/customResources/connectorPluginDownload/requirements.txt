@@ -1,3 +1,0 @@
-boto3==1.26.139
-smart-open==6.3.0
-requests==2.32.0
