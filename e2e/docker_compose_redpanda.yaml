@@ -17,7 +17,7 @@ services:
       - "9092:9092"
 
   connect:
-    image: docker.io/apache/kafka:${KAFKA_VERSION:-3.9.0}
+    image: docker.io/apache/kafka:${KAFKA_VERSION:-4.0.0}
     depends_on:
       - kafka
     ports:
