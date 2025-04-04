@@ -1,6 +1,6 @@
 services:
   kafka:
-    image: docker.io/apache/kafka:${KAFKA_VERSION:-3.9.0}
+    image: docker.io/apache/kafka:${KAFKA_VERSION:-4.0.0}
     ports:
       - "9092:9092"
     environment:
@@ -20,7 +20,7 @@ services:
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
 
   connect:
-    image: docker.io/apache/kafka:${KAFKA_VERSION:-3.9.0}
+    image: docker.io/apache/kafka:${KAFKA_VERSION:-4.0.0}
     depends_on:
       - kafka
     ports:
