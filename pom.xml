@@ -35,7 +35,7 @@
         <org.hamcrest.version>3.0</org.hamcrest.version>
         <org.jacoco.version>0.8.13</org.jacoco.version>
         <org.junit.jupiter.version>5.12.1</org.junit.jupiter.version>
-        <org.mockito.version>5.16.1</org.mockito.version>
+        <org.mockito.version>5.17.0</org.mockito.version>
         <org.slf4j.version>2.0.17</org.slf4j.version>
         <org.skyscreamer.version>1.5.3</org.skyscreamer.version>
         <org.testcontainers.version>1.20.6</org.testcontainers.version>
