@@ -54,7 +54,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         java: ["17"]
-        kafka: ["7.6.1","7.7.1"]
+        kafka: ["7.9.0"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -81,7 +81,7 @@ jobs:
         os: [ubuntu-22.04]
         java: ["17"]
         kafka: ["3.9.0","4.0.0"]
-        redpanda: ["v24.2.1"]
+        redpanda: ["v24.2.21"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
