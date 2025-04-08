@@ -13,7 +13,7 @@
     <version>${revision}</version>
     <packaging>jar</packaging>
     <name>kafka-eventbridge-sink</name>
-    <url>https://github.com/awslabs/eventbridge-kafka-connector</url>
+    <url>https://github.com/aws/eventbridge-kafka-connector</url>
     <description>Kafka Connect sink to consume and send Kafka records to an EventBridge event bus.</description>
 
     <properties>
@@ -349,7 +349,7 @@
                                 <deliveryGuarantee>atLeastOnce</deliveryGuarantee>
                             </deliveryGuarantee>
                             <documentationUrl>
-                                https://github.com/awslabs/eventbridge-kafka-connector#kafka-connector-for-amazon-eventbridge
+                                https://github.com/aws/eventbridge-kafka-connector#kafka-connector-for-amazon-eventbridge
                             </documentationUrl>
                             <logo>logos/eventbridge.jpg</logo>
                             <ownerLogo>logos/aws.jpg</ownerLogo>
@@ -357,11 +357,8 @@
                             <ownerType>organization</ownerType>
                             <ownerUrl>https://aws.amazon.com</ownerUrl>
                             <ownerUsername>aws</ownerUsername>
-                            <supportSummary>The connector is released as a community-supported open-source project with
-                                best effort support from the repository maintainers.
-                            </supportSummary>
                             <supportUrl>
-                                https://github.com/awslabs/eventbridge-kafka-connector#kafka-connector-for-amazon-eventbridge
+                                https://github.com/aws/eventbridge-kafka-connector#kafka-connector-for-amazon-eventbridge
                             </supportUrl>
                             <tags>
                                 <tag>eventbridge</tag>
@@ -507,7 +504,7 @@
         </developer>
     </developers>
     <issueManagement>
-        <url>https://github.com/awslabs/eventbridge-kafka-connector/issues</url>
+        <url>https://github.com/aws/eventbridge-kafka-connector/issues</url>
         <system>github</system>
     </issueManagement>
     <licenses>
@@ -518,8 +515,8 @@
         </license>
     </licenses>
     <scm>
-        <url>http://github.com/awslabs/eventbridge-kafka-connector/tree/main</url>
-        <connection>scm:git:git://github.com/awslabs/eventbridge-kafka-connector.git</connection>
-        <developerConnection>scm:git:ssh://github.com/awslabs/eventbridge-kafka-connector.git</developerConnection>
+        <url>http://github.com/aws/eventbridge-kafka-connector/tree/main</url>
+        <connection>scm:git:git://github.com/aws/eventbridge-kafka-connector.git</connection>
+        <developerConnection>scm:git:ssh://github.com/aws/eventbridge-kafka-connector.git</developerConnection>
     </scm>
 </project>

@@ -1,7 +1,7 @@
 # Kafka Connector for Amazon EventBridge
-[![Build](https://github.com/awslabs/eventbridge-kafka-connector/actions/workflows/build.yaml/badge.svg)](https://github.com/awslabs/eventbridge-kafka-connector/actions/workflows/build.yaml)
-[![Java E2E](https://github.com/awslabs/eventbridge-kafka-connector/actions/workflows/e2e.yaml/badge.svg)](https://github.com/awslabs/eventbridge-kafka-connector/actions/workflows/e2e.yaml)
-[![Latest Release](https://img.shields.io/github/release/awslabs/eventbridge-kafka-connector.svg?logo=github&style=flat-square)](https://github.com/awslabs/eventbridge-kafka-connector/releases/latest)
+[![Build](https://github.com/aws/eventbridge-kafka-connector/actions/workflows/build.yaml/badge.svg)](https://github.com/aws/eventbridge-kafka-connector/actions/workflows/build.yaml)
+[![Java E2E](https://github.com/aws/eventbridge-kafka-connector/actions/workflows/e2e.yaml/badge.svg)](https://github.com/aws/eventbridge-kafka-connector/actions/workflows/e2e.yaml)
+[![Latest Release](https://img.shields.io/github/release/aws/eventbridge-kafka-connector.svg?logo=github&style=flat-square)](https://github.com/aws/eventbridge-kafka-connector/releases/latest)
 
 
 This Kafka *sink* connector for Amazon EventBridge allows you to send events (records) from one or multiple Kafka
@@ -26,24 +26,30 @@ routing rules to determine where to send your events, allowing for application a
 systems as they occur. To get started with Amazon EventBridge, visit our
 [documentation](https://aws.amazon.com/eventbridge/resources/).
 
-The connector is released as a community-supported open-source project with best effort support from the repository
-maintainers.
+## Getting Help
+
+The best way to interact with our team is through GitHub. You can open an
+[issue](https://github.com/aws/eventbridge-kafka-connector/issues/new/choose) and choose from one of our templates for
+bug reports, feature requests, security questions, or guidance.
+
+If you have a support plan with AWS Support, you can also create a new [support
+case](https://console.aws.amazon.com/support/home#/).
 
 ## Installation
-
-### Confluent Connector Hub
-
-Download the connector from [Confluent Connector Hub](https://www.confluent.io/hub/aws/kafka-eventbridge-sink).
 
 ### Java Archive (JAR)
 
 Two `kafka-eventbridge-sink` JAR files, are created on each
-[release](https://github.com/awslabs/eventbridge-kafka-connector/releases). The JAR file `*-with-dependencies.jar`
+[release](https://github.com/aws/eventbridge-kafka-connector/releases). The JAR file `*-with-dependencies.jar`
 contains all required dependencies of the connector, **excluding** Kafka Connect dependencies and (de)serializers, such
 as `connect-api` and `connect-json`. To support additional (de)serializers, such as Avro and Protobuf using the [AWS
 Glue Schema
 Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-apache-kafka-connect),
 install these dependencies in your Kafka Connect environment before deploying this connector.
+
+### Confluent Connector Hub
+
+Download the connector from [Confluent Connector Hub](https://www.confluent.io/hub/aws/kafka-eventbridge-sink).
 
 ### From Source
 
@@ -53,7 +59,7 @@ Java Development Kit (JDK 11 or later).
 Clone the repo:
 
 ```console
-git clone https://github.com/awslabs/eventbridge-kafka-connector.git
+git clone https://github.com/aws/eventbridge-kafka-connector.git
 cd eventbridge-kafka-connector
 ```
 
@@ -72,7 +78,7 @@ Clone the repo:
 
 ```console
 # clone repo
-git clone https://github.com/awslabs/eventbridge-kafka-connector.git
+git clone https://github.com/aws/eventbridge-kafka-connector.git
 cd eventbridge-kafka-connector
 ```
 
