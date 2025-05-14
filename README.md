@@ -37,6 +37,17 @@ case](https://console.aws.amazon.com/support/home#/).
 
 ## Installation
 
+### Amazon Managed Streaming for Apache Kafka (MSK)
+
+Amazon MSK Connect provides a fully managed experience for using Kafka Connect with Amazon MSK. For a complete
+step-by-step tutorial on setting up this connector with Amazon MSK Connect, refer to the official [Amazon MSK Connect
+tutorial for the EventBridge Kafka
+Connector](https://docs.aws.amazon.com/msk/latest/developerguide/mkc-eventbridge-kafka-connector.html).
+
+### Confluent Connector Hub
+
+Download the connector from [Confluent Connector Hub](https://www.confluent.io/hub/aws/kafka-eventbridge-sink).
+
 ### Java Archive (JAR)
 
 Two `kafka-eventbridge-sink` JAR files, are created on each
@@ -46,10 +57,6 @@ as `connect-api` and `connect-json`. To support additional (de)serializers, such
 Glue Schema
 Registry](https://docs.aws.amazon.com/glue/latest/dg/schema-registry-integrations.html#schema-registry-integrations-apache-kafka-connect),
 install these dependencies in your Kafka Connect environment before deploying this connector.
-
-### Confluent Connector Hub
-
-Download the connector from [Confluent Connector Hub](https://www.confluent.io/hub/aws/kafka-eventbridge-sink).
 
 ### From Source
 
