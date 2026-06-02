@@ -19,7 +19,7 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <aws.java.sdk.version>2.44.12</aws.java.sdk.version>
+        <aws.java.sdk.version>2.46.0</aws.java.sdk.version>
         <aws.schema.registry.version>1.1.15</aws.schema.registry.version>
         <ch.qos.logback.version>1.5.32</ch.qos.logback.version>
         <com.fasterxml.jackson.version>2.21.3</com.fasterxml.jackson.version>
