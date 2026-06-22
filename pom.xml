@@ -26,7 +26,7 @@
         <com.jayway.jsonpath.version>3.0.0</com.jayway.jsonpath.version>
         <net.minidev.json-smart.version>2.6.0</net.minidev.json-smart.version>
         <commons-codec.version>1.22.0</commons-codec.version>
-        <commons-logging.version>1.3.6</commons-logging.version>
+        <commons-logging.version>1.4.0</commons-logging.version>
         <connect.api.version>3.9.2</connect.api.version>
         <equalsverifier.version>4.2</equalsverifier.version>
         <org.apache.commons.version>3.20.0</org.apache.commons.version>
