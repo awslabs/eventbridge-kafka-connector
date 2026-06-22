@@ -4,7 +4,9 @@ module.exports = {
     rules: {
         // warn only
         'subject-case': [1, 'always', 'lower-case'],
-        // fail
-        'body-max-length': [2, 'always', 200]
+        // warn only (long bodies, e.g. from Dependabot changelogs, should not fail CI)
+        'body-max-length': [1, 'always', 200],
+        // warn only (Dependabot changelog/URL lines routinely exceed 100 chars)
+        'body-max-line-length': [1, 'always', 100]
     },
 }
