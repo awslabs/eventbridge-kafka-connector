@@ -44,7 +44,7 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: "maven"
       - name: Set up Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c # v2.2.0
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2 # v2.3.0
         with:
           version: v2.40.3
       - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with Apache Kafka
@@ -74,7 +74,7 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: "maven"
       - name: Set up Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c # v2.2.0
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2 # v2.3.0
         with:
           version: v2.40.3
       - name: Run Confluent Kafka Platform ${{ matrix.kafka }} E2E Tests
@@ -106,7 +106,7 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: "maven"
       - name: Set up Docker Compose
-        uses: docker/setup-compose-action@16feee727cbdc83b6a014e6cc26fec4a79bcf30c # v2.2.0
+        uses: docker/setup-compose-action@4eb059ff7f16592f9c84d5ca339c53cb7c5064e2 # v2.3.0
         with:
           version: v2.40.3
       - name: Run Kafka Connect ${{ matrix.kafka }} E2E Tests with Redpanda ${{ matrix.redpanda }}
