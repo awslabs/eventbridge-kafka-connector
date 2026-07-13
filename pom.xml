@@ -34,7 +34,7 @@
         <org.awaitility.version>4.3.0</org.awaitility.version>
         <org.hamcrest.version>3.0</org.hamcrest.version>
         <org.jacoco.version>0.8.15</org.jacoco.version>
-        <org.junit.jupiter.version>6.1.0</org.junit.jupiter.version>
+        <org.junit.jupiter.version>6.1.2</org.junit.jupiter.version>
         <org.mockito.version>5.23.0</org.mockito.version>
         <org.slf4j.version>2.0.18</org.slf4j.version>
         <org.skyscreamer.version>1.5.3</org.skyscreamer.version>
